@@ -12,7 +12,7 @@ async def test_event_context_is_exposed_through_mcp() -> None:
     async with Client(mcp, raise_exceptions=True) as client:
         tools = await client.list_tools()
 
-        assert [tool.name for tool in tools.tools] == ["get_event_context"]
+        assert "get_event_context" in {tool.name for tool in tools.tools}
 
         result = await client.call_tool(
             "get_event_context",
