@@ -1,0 +1,22 @@
+[
+  {
+    "id": "44444444-4444-4444-4444-444444444441",
+    "public_reference": "HELP-2026-001",
+    "assistance_type": "BLOOD",
+    "status": "ACTIVE",
+    "title": "Urgent B-positive blood assistance",
+    "summary": "A verified community member needs blood support.",
+    "urgency": "URGENT",
+    "location_text": "Community Hospital, Sirajganj",
+    "needed_by": "2026-10-04T12:00:00+06:00",
+    "blood_group": "B+",
+    "units_needed": 2,
+    "verified": true,
+    "approved": true,
+    "allowed_actions": [
+      "DONATE_BLOOD",
+      "VOLUNTEER",
+      "SHARE"
+    ]
+  }
+]
