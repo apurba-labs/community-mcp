@@ -1,0 +1,53 @@
+from mcp.server import MCPServer
+
+from community_mcp.config import get_settings
+from community_mcp.providers.base import (
+    CommunityDataProvider,
+    EventNotFoundError,
+)
+from community_mcp.providers.factory import create_provider
+from community_mcp.schemas.event import EventDetail
+
+
+def create_mcp_server(
+    provider: CommunityDataProvider | None = None,
+) -> MCPServer:
+    data_provider = provider or create_provider(get_settings())
+
+    mcp = MCPServer(
+        "Community MCP",
+        instructions=(
+            "Use Community MCP for authoritative community information and "
+            "permissioned community actions. Do not invent institutional facts "
+            "when a Community MCP capability can provide them."
+        ),
+    )
+
+    @mcp.tool()
+    async def get_event_context(event_slug: str) -> EventDetail:
+        """Get authoritative public context for a community event.
+
+        Use this when reasoning about an event's schedule, program, venue,
+        registration requirements, guests, sponsors, or event team.
+
+        Args:
+            event_slug: Stable public slug identifying the event.
+        """
+        try:
+            return await data_provider.get_event_by_slug(event_slug)
+        except EventNotFoundError as exc:
+            raise ValueError(
+                f"No public event was found with slug '{event_slug}'."
+            ) from exc
+
+    return mcp
+
+
+mcp = create_mcp_server()
+
+
+if __name__ == "__main__":
+    mcp.run(
+        transport="streamable-http",
+        json_response=True,
+    )
