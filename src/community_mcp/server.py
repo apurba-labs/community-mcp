@@ -6,12 +6,17 @@ from community_mcp.assistance.service import (
     AssistanceUnavailableError,
 )
 from community_mcp.config import get_settings
+from community_mcp.policy.assistance import AssistancePolicy
 from community_mcp.providers.base import (
     CommunityDataProvider,
     EventNotFoundError,
 )
 from community_mcp.providers.factory import create_provider
-from community_mcp.schemas.assistance import AssistanceRequest
+from community_mcp.schemas.action import PreparedAssistanceResponse
+from community_mcp.schemas.assistance import (
+    AssistanceAction,
+    AssistanceRequest,
+)
 from community_mcp.schemas.event import EventDetail
 
 
@@ -20,6 +25,7 @@ def create_mcp_server(
 ) -> MCPServer:
     data_provider = provider or create_provider(get_settings())
     assistance_service = AssistanceService()
+    assistance_policy = AssistancePolicy()
 
     mcp = MCPServer(
         "Community MCP",
@@ -70,8 +76,41 @@ def create_mcp_server(
                 f"Assistance request '{public_reference}' is not available."
             ) from exc
 
-    return mcp
+    @mcp.tool()
+    async def prepare_assistance_response(
+        public_reference: str,
+        actor_id: str,
+        action: AssistanceAction,
+    ) -> PreparedAssistanceResponse:
+        """Prepare a community assistance response for user confirmation.
 
+        This capability evaluates deterministic policy and prepares an
+        intended response. It does not record, send, notify, or execute
+        the response.
+
+        Args:
+            public_reference: Public assistance request reference.
+            actor_id: Authenticated actor identifier supplied by the caller.
+            action: Assistance action the actor intends to perform.
+        """
+        try:
+            request = await assistance_service.get_public_context(public_reference)
+        except AssistanceNotFoundError as exc:
+            raise ValueError(
+                f"No assistance request was found for '{public_reference}'."
+            ) from exc
+        except AssistanceUnavailableError as exc:
+            raise ValueError(
+                f"Assistance request '{public_reference}' is not available."
+            ) from exc
+
+        return assistance_policy.prepare_response(
+            request,
+            actor_id=actor_id,
+            action=action,
+        )
+
+    return mcp
 
 mcp = create_mcp_server()
 

@@ -17,6 +17,7 @@ async def test_assistance_context_is_exposed_through_mcp() -> None:
         } == {
             "get_event_context",
             "get_assistance_context",
+            "prepare_assistance_response",
         }
 
         result = await client.call_tool(
