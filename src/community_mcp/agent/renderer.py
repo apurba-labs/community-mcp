@@ -10,19 +10,19 @@ class BilingualRenderer:
         event: EventDetail,
         locale: SupportedLocale,
     ) -> str:
-        schedules = ", ".join(
-            schedule.title for schedule in event.schedules
+        program = ", ".join(
+            item.title for item in event.program
         )
 
         if locale == SupportedLocale.BN:
             return (
                 f"{event.title} অনুষ্ঠানের প্রধান কার্যক্রম: "
-                f"{schedules}।"
+                f"{program}।"
             )
 
         return (
             f"The main activities for {event.title} are: "
-            f"{schedules}."
+            f"{program}."
         )
 
     def assistance_context(
