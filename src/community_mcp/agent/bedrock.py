@@ -15,6 +15,7 @@ Return JSON only with this shape:
 
 Allowed intents:
 EVENT_CONTEXT
+COMMUNITY_CONTEXT
 ASSISTANCE_CONTEXT
 ASSISTANCE_RESPONSE
 CONFIRM_ACTION
@@ -28,6 +29,9 @@ SHARE
 Rules:
 - EVENT_CONTEXT: user asks about an event, program, schedule, venue,
   guest, or event information.
+- COMMUNITY_CONTEXT: user asks about their community, alumni membership,
+  batch, classmates or batchmates, member registration, or aggregate
+  community participation that is not specifically about an event.
 - ASSISTANCE_CONTEXT: user asks whether someone needs help or asks for
   information about an assistance request.
 - ASSISTANCE_RESPONSE: user personally offers to help, donate blood,
@@ -51,6 +55,10 @@ Action rules:
 - Otherwise action must be null.
 
 Important:
+- Asking how many people from the user's batch are registered as alumni
+  is COMMUNITY_CONTEXT.
+- Asking how many people from the user's batch registered for a specific
+  event is EVENT_CONTEXT.
 - Asking about a blood request is ASSISTANCE_CONTEXT.
 - Offering to donate blood is ASSISTANCE_RESPONSE with DONATE_BLOOD.
 - Explicit confirmation phrases may be CONFIRM_ACTION without repeating

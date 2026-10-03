@@ -2,6 +2,7 @@ import pytest
 
 from community_mcp.agent.bedrock import BedrockReasoner
 from community_mcp.agent.reasoning import DeterministicReasoner
+from community_mcp.agent.safe_reasoning import SafeReasoner
 from community_mcp.agent.schemas import SupportedLocale
 from community_mcp.config import Settings
 from community_mcp.demo import build_reasoner, detect_locale
@@ -42,7 +43,8 @@ def test_demo_uses_deterministic_reasoning_by_default() -> None:
 
     reasoner = build_reasoner(settings)
 
-    assert isinstance(reasoner, DeterministicReasoner)
+    assert isinstance(reasoner, SafeReasoner)
+    assert isinstance(reasoner.delegate, DeterministicReasoner)
 
 
 def test_demo_builds_bedrock_reasoner_when_configured() -> None:
@@ -56,5 +58,5 @@ def test_demo_builds_bedrock_reasoner_when_configured() -> None:
 
     reasoner = build_reasoner(settings)
 
-    assert isinstance(reasoner, BedrockReasoner)
-    assert reasoner.model_id == "amazon.nova-micro-v1:0"
+    assert isinstance(reasoner, SafeReasoner)
+    assert isinstance(reasoner.delegate, BedrockReasoner)

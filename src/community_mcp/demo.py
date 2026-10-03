@@ -7,6 +7,7 @@ from community_mcp.agent.reasoning import (
     DeterministicReasoner,
     ReasoningProvider,
 )
+from community_mcp.agent.safe_reasoning import SafeReasoner
 from community_mcp.agent.schemas import AgentRequest, SupportedLocale
 from community_mcp.config import Settings, get_settings
 from community_mcp.providers.demo import DemoProvider
@@ -21,13 +22,15 @@ def detect_locale(message: str) -> SupportedLocale:
 
 def build_reasoner(settings: Settings) -> ReasoningProvider:
     if settings.reasoning_provider == "bedrock":
-        return BedrockReasoner(
+        delegate = BedrockReasoner(
             profile_name=settings.aws_profile,
             region_name=settings.bedrock_region,
             model_id=settings.bedrock_model_id,
         )
+    else:
+        delegate = DeterministicReasoner()
 
-    return DeterministicReasoner()
+    return SafeReasoner(delegate)
 
 
 async def run_demo() -> None:

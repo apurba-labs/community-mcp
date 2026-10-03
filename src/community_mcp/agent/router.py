@@ -6,11 +6,13 @@ class IntentRouter:
         normalized = message.casefold().strip()
 
         confirmation_phrases = {
-            "yes",
             "yes confirm",
             "confirm",
-            "হ্যাঁ",
+            "yes, confirm it",
+            "i confirm",
             "হ্যাঁ নিশ্চিত করুন",
+            "হ্যাঁ, নিশ্চিত করুন",
+            "হ্যাঁ, আমি নিশ্চিত করছি",
             "নিশ্চিত করুন",
         }
 
@@ -27,7 +29,10 @@ class IntentRouter:
             "রক্ত দিতে চাই",
         )
 
-        if any(term in normalized for term in assistance_response_terms):
+        if any(
+            term in normalized
+            for term in assistance_response_terms
+        ):
             return AgentIntent.ASSISTANCE_RESPONSE
 
         assistance_terms = (
@@ -48,12 +53,37 @@ class IntentRouter:
             "schedule",
             "centenary",
             "celebration",
+            "attending",
+            "attend",
+            "event registration",
+            "registered for the centenary",
             "অনুষ্ঠান",
             "সময়সূচি",
             "শতবর্ষ",
+            "ইভেন্ট",
+            "অনুষ্ঠানে রেজিস্ট্রেশন",
+            "অনুষ্ঠানে আসছে",
         )
 
         if any(term in normalized for term in event_terms):
             return AgentIntent.EVENT_CONTEXT
+
+        community_terms = (
+            "alumni",
+            "alumni platform",
+            "alumni community",
+            "my batch",
+            "batchmates",
+            "registered alumni",
+            "অ্যালামনাই",
+            "আমার ব্যাচ",
+            "ব্যাচের কতজন",
+            "অ্যালামনাই কমিউনিটি",
+            "অ্যালামনাই প্ল্যাটফর্ম",
+            "রেজিস্টার্ড অ্যালামনাই",
+        )
+
+        if any(term in normalized for term in community_terms):
+            return AgentIntent.COMMUNITY_CONTEXT
 
         return AgentIntent.UNKNOWN
