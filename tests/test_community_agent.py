@@ -94,4 +94,21 @@ async def test_confirmation_without_pending_action_is_safe() -> None:
 
     assert response.intent == AgentIntent.CONFIRM_ACTION
     assert response.requires_confirmation is False
-    assert "couldn't understand" in response.message.lower()
+    assert "no pending action" in response.message.lower()
+
+@pytest.mark.asyncio
+async def test_bangla_confirmation_without_pending_action_is_safe() -> None:
+    agent = CommunityAgent(DemoProvider())
+
+    response = await agent.handle(
+        AgentRequest(
+            message="হ্যাঁ নিশ্চিত করুন",
+            locale=SupportedLocale.BN,
+            actor_id="demo-member-001",
+            session_id="journey-003",
+        )
+    )
+
+    assert response.intent == AgentIntent.CONFIRM_ACTION
+    assert response.requires_confirmation is False
+    assert "প্রস্তুত কার্যক্রম নেই" in response.message

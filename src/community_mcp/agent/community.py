@@ -95,7 +95,7 @@ class CommunityAgent:
                 return AgentResponse(
                     locale=request.locale,
                     intent=intent,
-                    message=self.renderer.unknown(
+                    message=self.renderer.no_pending_action(
                         request.locale
                     ),
                 )
@@ -149,7 +149,7 @@ class CommunityAgent:
                 return AgentResponse(
                     locale=request.locale,
                     intent=intent,
-                    message=self.renderer.unknown(
+                    message=self.renderer.no_pending_action(
                         request.locale
                     ),
                 )
@@ -176,7 +176,7 @@ class CommunityAgent:
         return AgentResponse(
             locale=request.locale,
             intent=AgentIntent.UNKNOWN,
-            message=self.renderer.unknown(
+            message=self.renderer.no_pending_action(
                 request.locale
             ),
         )

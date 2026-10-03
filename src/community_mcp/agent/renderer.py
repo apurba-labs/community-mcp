@@ -81,3 +81,18 @@ class BilingualRenderer:
             "I couldn't understand that request yet. "
             "You can ask about events or community assistance."
         )
+
+    def no_pending_action(
+        self,
+        locale: SupportedLocale,
+    ) -> str:
+        if locale == SupportedLocale.BN:
+            return (
+                "নিশ্চিত করার মতো কোনো প্রস্তুত কার্যক্রম নেই। "
+                "প্রথমে আপনি কীভাবে সাহায্য করতে চান তা জানান।"
+            )
+
+        return (
+            "There is no pending action to confirm. "
+            "First tell me how you'd like to help."
+        )
