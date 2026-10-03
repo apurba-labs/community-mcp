@@ -21,7 +21,6 @@ async def test_reasoner_returns_canonical_event_intent() -> None:
     assert decision.intent == AgentIntent.EVENT_CONTEXT
     assert decision.locale == SupportedLocale.EN
     assert decision.action is None
-    assert decision.confidence == 1.0
 
 
 @pytest.mark.asyncio
@@ -33,7 +32,6 @@ async def test_reasoner_maps_bangla_donation_to_canonical_action() -> None:
 
     assert decision.intent == AgentIntent.ASSISTANCE_RESPONSE
     assert decision.action == AssistanceAction.DONATE_BLOOD
-    assert decision.confidence == 1.0
 
 
 @pytest.mark.asyncio
@@ -45,7 +43,6 @@ async def test_unknown_reasoning_is_explicit() -> None:
 
     assert decision.intent == AgentIntent.UNKNOWN
     assert decision.action is None
-    assert decision.confidence == 0.0
 
 
 def test_reasoning_contract_has_no_authorization_field() -> None:

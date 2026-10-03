@@ -110,7 +110,6 @@ class BedrockReasoner(ReasoningProvider):
             intent=parsed.intent,
             locale=locale,
             action=parsed.action,
-            confidence=1.0,
         )
 
     @staticmethod

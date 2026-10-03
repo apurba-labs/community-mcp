@@ -130,7 +130,6 @@ class NaturalLanguageTestReasoner(ReasoningProvider):
             intent=AgentIntent.ASSISTANCE_RESPONSE,
             locale=locale,
             action=AssistanceAction.DONATE_BLOOD,
-            confidence=0.95,
         )
 
 

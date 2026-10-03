@@ -41,7 +41,6 @@ async def test_bedrock_reasoner_returns_donation_decision() -> None:
     assert decision.intent == AgentIntent.ASSISTANCE_RESPONSE
     assert decision.action == AssistanceAction.DONATE_BLOOD
     assert decision.locale == SupportedLocale.EN
-    assert decision.confidence == 1.0
     assert len(client.calls) == 1
 
 
