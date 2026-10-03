@@ -33,6 +33,15 @@ Rules:
 - ASSISTANCE_RESPONSE: user personally offers to help, donate blood,
   volunteer, or share an assistance request.
 - CONFIRM_ACTION: user explicitly confirms a previously prepared action.
+  This includes direct confirmation commands or statements in English
+  or Bangla, even when the user does not repeat the prepared action.
+  Examples:
+  - "Yes, confirm it"
+  - "I confirm"
+  - "হ্যাঁ নিশ্চিত করুন"
+  - "হ্যাঁ, নিশ্চিত করুন"
+  - "হ্যাঁ, আমি নিশ্চিত করছি"
+  - "নিশ্চিত করুন"
 - UNKNOWN: none of the above.
 
 Action rules:
@@ -44,10 +53,13 @@ Action rules:
 Important:
 - Asking about a blood request is ASSISTANCE_CONTEXT.
 - Offering to donate blood is ASSISTANCE_RESPONSE with DONATE_BLOOD.
+- Explicit confirmation phrases may be CONFIRM_ACTION without repeating
+  the previously prepared action.
+- A generic affirmative by itself, such as "yes", "হ্যাঁ", "okay", or
+  "ঠিক আছে", is not sufficient for CONFIRM_ACTION.
 - Never authorize, approve, confirm, or execute an action.
 - Do not include explanations or markdown.
 """.strip()
-
 
 class BedrockDecision(BaseModel):
     intent: AgentIntent
