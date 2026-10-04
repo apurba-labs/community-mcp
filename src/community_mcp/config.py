@@ -18,6 +18,12 @@ class Settings(BaseSettings):
     data_provider: Literal["demo", "gotihub"] = "demo"
     gotihub_base_url: HttpUrl | None = None
 
+    reasoning_provider: Literal["deterministic", "bedrock"] = "deterministic"
+
+    aws_profile: str | None = None
+    bedrock_region: str = "us-east-1"
+    bedrock_model_id: str = "amazon.nova-micro-v1:0"
+
 
 @lru_cache
 def get_settings() -> Settings:

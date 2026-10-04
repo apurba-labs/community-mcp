@@ -1,12 +1,17 @@
 import pytest
 
 from community_mcp.agent.community import CommunityAgent
+from community_mcp.agent.reasoning import (
+    AgentDecision,
+    ReasoningProvider,
+)
 from community_mcp.agent.schemas import (
     AgentIntent,
     AgentRequest,
     SupportedLocale,
 )
 from community_mcp.providers.demo import DemoProvider
+from community_mcp.schemas.assistance import AssistanceAction
 
 
 @pytest.mark.asyncio
@@ -112,3 +117,38 @@ async def test_bangla_confirmation_without_pending_action_is_safe() -> None:
     assert response.intent == AgentIntent.CONFIRM_ACTION
     assert response.requires_confirmation is False
     assert "প্রস্তুত কার্যক্রম নেই" in response.message
+
+
+class NaturalLanguageTestReasoner(ReasoningProvider):
+    async def reason(
+        self,
+        *,
+        message: str,
+        locale: SupportedLocale,
+    ) -> AgentDecision:
+        return AgentDecision(
+            intent=AgentIntent.ASSISTANCE_RESPONSE,
+            locale=locale,
+            action=AssistanceAction.DONATE_BLOOD,
+        )
+
+
+@pytest.mark.asyncio
+async def test_agent_uses_injected_reasoner_for_natural_language() -> None:
+    agent = CommunityAgent(
+        DemoProvider(),
+        reasoner=NaturalLanguageTestReasoner(),
+    )
+
+    response = await agent.handle(
+        AgentRequest(
+            message="I'm B positive and would be happy to help them.",
+            locale=SupportedLocale.EN,
+            actor_id="demo-member-001",
+            session_id="reasoning-001",
+        )
+    )
+
+    assert response.intent == AgentIntent.ASSISTANCE_RESPONSE
+    assert response.requires_confirmation is True
+    assert response.preparation_id is not None

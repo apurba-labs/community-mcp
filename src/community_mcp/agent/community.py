@@ -1,5 +1,8 @@
+from community_mcp.agent.reasoning import (
+    DeterministicReasoner,
+    ReasoningProvider,
+)
 from community_mcp.agent.renderer import BilingualRenderer
-from community_mcp.agent.router import IntentRouter
 from community_mcp.agent.schemas import (
     AgentIntent,
     AgentRequest,
@@ -12,7 +15,6 @@ from community_mcp.assistance.service import AssistanceService
 from community_mcp.policy.assistance import AssistancePolicy
 from community_mcp.providers.base import CommunityDataProvider
 from community_mcp.schemas.action import PolicyDecision
-from community_mcp.schemas.assistance import AssistanceAction
 
 
 class CommunityAgent:
@@ -20,6 +22,7 @@ class CommunityAgent:
         self,
         provider: CommunityDataProvider,
         *,
+        reasoner: ReasoningProvider | None = None,
         event_slug: str = "centenary-celebration",
         assistance_reference: str = "HELP-2026-001",
     ) -> None:
@@ -27,7 +30,7 @@ class CommunityAgent:
         self.event_slug = event_slug
         self.assistance_reference = assistance_reference
 
-        self.router = IntentRouter()
+        self.reasoner = reasoner or DeterministicReasoner()
         self.renderer = BilingualRenderer()
         self.sessions = AgentSessionStore()
 
@@ -48,7 +51,11 @@ class CommunityAgent:
             actor_id=request.actor_id,
         )
 
-        intent = self.router.classify(request.message)
+        decision = await self.reasoner.reason(
+            message=request.message,
+            locale=request.locale,
+        )
+        intent = decision.intent
 
         if intent == AgentIntent.EVENT_CONTEXT:
             event = await self.provider.get_event_by_slug(
@@ -100,6 +107,15 @@ class CommunityAgent:
                     ),
                 )
 
+            if decision.action is None:
+                return AgentResponse(
+                    locale=request.locale,
+                    intent=intent,
+                    message=self.renderer.unknown(
+                        request.locale
+                    ),
+                )
+
             public_reference = (
                 session.current_assistance_reference
                 or self.assistance_reference
@@ -114,9 +130,8 @@ class CommunityAgent:
             prepared = self.assistance_policy.prepare_response(
                 assistance,
                 actor_id=session.actor_id,
-                action=AssistanceAction.DONATE_BLOOD,
+                action=decision.action,
             )
-
             if (
                 prepared.decision
                 == PolicyDecision.REQUIRES_CONFIRMATION
