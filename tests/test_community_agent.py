@@ -152,3 +152,51 @@ async def test_agent_uses_injected_reasoner_for_natural_language() -> None:
     assert response.intent == AgentIntent.ASSISTANCE_RESPONSE
     assert response.requires_confirmation is True
     assert response.preparation_id is not None
+
+@pytest.mark.asyncio
+async def test_bangla_community_context_uses_member_aggregate() -> None:
+    from community_mcp.providers.demo_member_context import (
+        DemoMemberContextProvider,
+    )
+
+    agent = CommunityAgent(
+        DemoProvider(),
+        member_context_provider=DemoMemberContextProvider(),
+    )
+
+    response = await agent.handle(
+        AgentRequest(
+            message="আমার ব্যাচের কতজন অ্যালামনাই রেজিস্ট্রেশন করেছে?",
+            locale=SupportedLocale.BN,
+            actor_id="demo-member-001",
+            session_id="community-001",
+        )
+    )
+
+    assert response.intent == AgentIntent.COMMUNITY_CONTEXT
+    assert "2007" in response.message
+    assert "23" in response.message
+
+
+@pytest.mark.asyncio
+async def test_community_context_without_actor_fails_closed() -> None:
+    from community_mcp.providers.demo_member_context import (
+        DemoMemberContextProvider,
+    )
+
+    agent = CommunityAgent(
+        DemoProvider(),
+        member_context_provider=DemoMemberContextProvider(),
+    )
+
+    response = await agent.handle(
+        AgentRequest(
+            message="How many alumni from my batch are registered?",
+            locale=SupportedLocale.EN,
+            actor_id=None,
+            session_id="community-002",
+        )
+    )
+
+    assert response.intent == AgentIntent.COMMUNITY_CONTEXT
+    assert "cannot be securely resolved" in response.message
