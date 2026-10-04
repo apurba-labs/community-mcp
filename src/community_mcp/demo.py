@@ -11,6 +11,9 @@ from community_mcp.agent.safe_reasoning import SafeReasoner
 from community_mcp.agent.schemas import AgentRequest, SupportedLocale
 from community_mcp.config import Settings, get_settings
 from community_mcp.providers.demo import DemoProvider
+from community_mcp.providers.demo_member_context import (
+    DemoMemberContextProvider,
+)
 
 
 def detect_locale(message: str) -> SupportedLocale:
@@ -40,6 +43,7 @@ async def run_demo() -> None:
     agent = CommunityAgent(
         DemoProvider(),
         reasoner=reasoner,
+        member_context_provider=DemoMemberContextProvider(),
     )
 
     session_id = f"demo-{uuid4()}"

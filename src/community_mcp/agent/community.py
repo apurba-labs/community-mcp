@@ -14,6 +14,10 @@ from community_mcp.assistance.preparation_store import AssistancePreparationStor
 from community_mcp.assistance.service import AssistanceService
 from community_mcp.policy.assistance import AssistancePolicy
 from community_mcp.providers.base import CommunityDataProvider
+from community_mcp.providers.member_context import (
+    MemberContextProvider,
+    MemberContextUnavailableError,
+)
 from community_mcp.schemas.action import PolicyDecision
 
 
@@ -23,6 +27,7 @@ class CommunityAgent:
         provider: CommunityDataProvider,
         *,
         reasoner: ReasoningProvider | None = None,
+        member_context_provider: MemberContextProvider | None = None,
         event_slug: str = "centenary-celebration",
         assistance_reference: str = "HELP-2026-001",
     ) -> None:
@@ -31,6 +36,7 @@ class CommunityAgent:
         self.assistance_reference = assistance_reference
 
         self.reasoner = reasoner or DeterministicReasoner()
+        self.member_context_provider = member_context_provider
         self.renderer = BilingualRenderer()
         self.sessions = AgentSessionStore()
 
@@ -72,6 +78,38 @@ class CommunityAgent:
                 intent=intent,
                 message=self.renderer.event_context(
                     event,
+                    request.locale,
+                ),
+            )
+
+        if intent == AgentIntent.COMMUNITY_CONTEXT:
+            if not session.actor_id or self.member_context_provider is None:
+                return AgentResponse(
+                    locale=request.locale,
+                    intent=intent,
+                    message=self.renderer.community_context_unavailable(
+                        request.locale
+                    ),
+                )
+
+            try:
+                context = await self.member_context_provider.get_my_batch_context(
+                    session.actor_id
+                )
+            except MemberContextUnavailableError:
+                return AgentResponse(
+                    locale=request.locale,
+                    intent=intent,
+                    message=self.renderer.community_context_unavailable(
+                        request.locale
+                    ),
+                )
+
+            return AgentResponse(
+                locale=request.locale,
+                intent=intent,
+                message=self.renderer.community_context(
+                    context,
                     request.locale,
                 ),
             )

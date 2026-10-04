@@ -1,6 +1,7 @@
 from community_mcp.agent.schemas import SupportedLocale
 from community_mcp.schemas.action import ConfirmedAssistanceResponse
 from community_mcp.schemas.assistance import AssistanceRequest
+from community_mcp.schemas.community import MyBatchContext
 from community_mcp.schemas.event import EventDetail
 
 
@@ -23,6 +24,37 @@ class BilingualRenderer:
         return (
             f"The main activities for {event.title} are: "
             f"{program}."
+        )
+
+    def community_context(
+        self,
+        context: MyBatchContext,
+        locale: SupportedLocale,
+    ) -> str:
+        if locale == SupportedLocale.BN:
+            return (
+                f"আপনার {context.batch_year} ব্যাচের "
+                f"{context.registered_alumni_count} জন অ্যালামনাই "
+                "প্ল্যাটফর্মে নিবন্ধিত আছেন।"
+            )
+
+        return (
+            f"There are {context.registered_alumni_count} registered alumni "
+            f"from your {context.batch_year} batch on the platform."
+        )
+
+    def community_context_unavailable(
+        self,
+        locale: SupportedLocale,
+    ) -> str:
+        if locale == SupportedLocale.BN:
+            return (
+                "আপনার অ্যালামনাই ব্যাচের তথ্য এখন নিরাপদভাবে "
+                "যাচাই করা যাচ্ছে না।"
+            )
+
+        return (
+            "Your alumni batch context cannot be securely resolved right now."
         )
 
     def assistance_context(
