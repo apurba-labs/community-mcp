@@ -31,3 +31,13 @@ def test_factory_requires_gotihub_base_url() -> None:
                 gotihub_base_url=None,
             )
         )
+
+
+def test_settings_accepts_blank_optional_gotihub_base_url(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("GOTIHUB_BASE_URL", "")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.gotihub_base_url is None

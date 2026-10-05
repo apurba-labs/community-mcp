@@ -19,6 +19,10 @@ from community_mcp.assistance.service import (
 )
 from community_mcp.config import get_settings
 from community_mcp.policy.assistance import AssistancePolicy
+from community_mcp.providers.assistance import AssistanceContextProvider
+from community_mcp.providers.assistance_factory import (
+    create_assistance_provider,
+)
 from community_mcp.providers.base import (
     CommunityDataProvider,
     EventNotFoundError,
@@ -37,9 +41,15 @@ from community_mcp.schemas.event import EventDetail
 
 def create_mcp_server(
     provider: CommunityDataProvider | None = None,
+    assistance_provider: AssistanceContextProvider | None = None,
 ) -> MCPServer:
-    data_provider = provider or create_provider(get_settings())
-    assistance_service = AssistanceService()
+    settings = get_settings()
+    data_provider = provider or create_provider(settings)
+    resolved_assistance_provider = (
+        assistance_provider or create_assistance_provider(settings)
+    )
+
+    assistance_service = AssistanceService(resolved_assistance_provider)
     assistance_policy = AssistancePolicy()
     preparation_store = AssistancePreparationStore()
     assistance_action_service = AssistanceActionService(preparation_store)

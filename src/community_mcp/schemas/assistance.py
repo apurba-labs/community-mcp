@@ -1,13 +1,16 @@
 from datetime import datetime
 from enum import StrEnum
-from uuid import UUID
 
 from pydantic import BaseModel
 
 
 class AssistanceType(StrEnum):
     BLOOD = "BLOOD"
+    FINANCIAL_SUPPORT = "FINANCIAL_SUPPORT"
     MEDICAL_SUPPORT = "MEDICAL_SUPPORT"
+    FAMILY_SUPPORT = "FAMILY_SUPPORT"
+    EMERGENCY = "EMERGENCY"
+    OTHER = "OTHER"
 
 
 class AssistanceStatus(StrEnum):
@@ -25,27 +28,27 @@ class AssistanceUrgency(StrEnum):
 
 class AssistanceAction(StrEnum):
     DONATE_BLOOD = "DONATE_BLOOD"
+    CONTRIBUTE = "CONTRIBUTE"
     VOLUNTEER = "VOLUNTEER"
     SHARE = "SHARE"
 
 
 class AssistanceRequest(BaseModel):
-    id: UUID
     public_reference: str
     assistance_type: AssistanceType
-    status: AssistanceStatus
+    status: AssistanceStatus = AssistanceStatus.ACTIVE
 
-    title: str
-    summary: str
+    title: str | None = None
+    summary: str | None = None
 
     urgency: AssistanceUrgency
-    location_text: str
+    location_text: str | None = None
     needed_by: datetime | None = None
 
     blood_group: str | None = None
     units_needed: int | None = None
 
-    verified: bool
-    approved: bool
+    verified: bool = True
+    approved: bool = True
 
     allowed_actions: list[AssistanceAction]

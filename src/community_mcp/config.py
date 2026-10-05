@@ -1,8 +1,20 @@
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import HttpUrl
+from pydantic import BeforeValidator, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def empty_string_to_none(value: object) -> object:
+    if isinstance(value, str) and not value.strip():
+        return None
+    return value
+
+
+OptionalHttpUrl = Annotated[
+    HttpUrl | None,
+    BeforeValidator(empty_string_to_none),
+]
 
 
 class Settings(BaseSettings):
@@ -16,7 +28,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     data_provider: Literal["demo", "gotihub"] = "demo"
-    gotihub_base_url: HttpUrl | None = None
+    gotihub_base_url: OptionalHttpUrl = None
 
     reasoning_provider: Literal["deterministic", "bedrock"] = "deterministic"
 
