@@ -13,7 +13,9 @@ from community_mcp.assistance.action_service import AssistanceActionService
 from community_mcp.assistance.preparation_store import AssistancePreparationStore
 from community_mcp.assistance.service import AssistanceService
 from community_mcp.policy.assistance import AssistancePolicy
+from community_mcp.providers.assistance import AssistanceContextProvider
 from community_mcp.providers.base import CommunityDataProvider
+from community_mcp.providers.demo_assistance import DemoAssistanceProvider
 from community_mcp.providers.member_context import (
     MemberContextProvider,
     MemberContextUnavailableError,
@@ -28,6 +30,7 @@ class CommunityAgent:
         *,
         reasoner: ReasoningProvider | None = None,
         member_context_provider: MemberContextProvider | None = None,
+        assistance_provider: AssistanceContextProvider | None = None,
         event_slug: str = "centenary-celebration",
         assistance_reference: str = "HELP-2026-001",
     ) -> None:
@@ -40,12 +43,10 @@ class CommunityAgent:
         self.renderer = BilingualRenderer()
         self.sessions = AgentSessionStore()
 
-        self.assistance_service = AssistanceService()
+        self.assistance_service = AssistanceService(assistance_provider or DemoAssistanceProvider())
         self.assistance_policy = AssistancePolicy()
         self.preparation_store = AssistancePreparationStore()
-        self.action_service = AssistanceActionService(
-            self.preparation_store
-        )
+        self.action_service = AssistanceActionService(self.preparation_store)
 
     async def handle(
         self,
@@ -64,9 +65,7 @@ class CommunityAgent:
         intent = decision.intent
 
         if intent == AgentIntent.EVENT_CONTEXT:
-            event = await self.provider.get_event_by_slug(
-                self.event_slug
-            )
+            event = await self.provider.get_event_by_slug(self.event_slug)
 
             self.sessions.set_event_context(
                 request.session_id,
@@ -87,22 +86,16 @@ class CommunityAgent:
                 return AgentResponse(
                     locale=request.locale,
                     intent=intent,
-                    message=self.renderer.community_context_unavailable(
-                        request.locale
-                    ),
+                    message=self.renderer.community_context_unavailable(request.locale),
                 )
 
             try:
-                context = await self.member_context_provider.get_my_batch_context(
-                    session.actor_id
-                )
+                context = await self.member_context_provider.get_my_batch_context(session.actor_id)
             except MemberContextUnavailableError:
                 return AgentResponse(
                     locale=request.locale,
                     intent=intent,
-                    message=self.renderer.community_context_unavailable(
-                        request.locale
-                    ),
+                    message=self.renderer.community_context_unavailable(request.locale),
                 )
 
             return AgentResponse(
@@ -115,11 +108,15 @@ class CommunityAgent:
             )
 
         if intent == AgentIntent.ASSISTANCE_CONTEXT:
-            assistance = (
-                await self.assistance_service.get_public_context(
-                    self.assistance_reference
+            public_reference = session.current_assistance_reference or self.assistance_reference
+
+            if session.actor_id:
+                assistance = await self.assistance_service.get_member_context(
+                    public_reference,
+                    actor_id=session.actor_id,
                 )
-            )
+            else:
+                assistance = await self.assistance_service.get_public_context(public_reference)
 
             self.sessions.set_assistance_context(
                 request.session_id,
@@ -140,29 +137,21 @@ class CommunityAgent:
                 return AgentResponse(
                     locale=request.locale,
                     intent=intent,
-                    message=self.renderer.no_pending_action(
-                        request.locale
-                    ),
+                    message=self.renderer.no_pending_action(request.locale),
                 )
 
             if decision.action is None:
                 return AgentResponse(
                     locale=request.locale,
                     intent=intent,
-                    message=self.renderer.unknown(
-                        request.locale
-                    ),
+                    message=self.renderer.unknown(request.locale),
                 )
 
-            public_reference = (
-                session.current_assistance_reference
-                or self.assistance_reference
-            )
+            public_reference = session.current_assistance_reference or self.assistance_reference
 
-            assistance = (
-                await self.assistance_service.get_public_context(
-                    public_reference
-                )
+            assistance = await self.assistance_service.get_member_context(
+                public_reference,
+                actor_id=session.actor_id,
             )
 
             prepared = self.assistance_policy.prepare_response(
@@ -170,10 +159,7 @@ class CommunityAgent:
                 actor_id=session.actor_id,
                 action=decision.action,
             )
-            if (
-                prepared.decision
-                == PolicyDecision.REQUIRES_CONFIRMATION
-            ):
+            if prepared.decision == PolicyDecision.REQUIRES_CONFIRMATION:
                 self.preparation_store.save(prepared)
                 self.sessions.set_pending_preparation(
                     request.session_id,
@@ -183,28 +169,17 @@ class CommunityAgent:
             return AgentResponse(
                 locale=request.locale,
                 intent=intent,
-                message=self.renderer.confirmation_required(
-                    request.locale
-                ),
-                requires_confirmation=(
-                    prepared.confirmation_required
-                ),
-                preparation_id=str(
-                    prepared.preparation_id
-                ),
+                message=self.renderer.confirmation_required(request.locale),
+                requires_confirmation=(prepared.confirmation_required),
+                preparation_id=str(prepared.preparation_id),
             )
 
         if intent == AgentIntent.CONFIRM_ACTION:
-            if (
-                not session.actor_id
-                or session.pending_preparation_id is None
-            ):
+            if not session.actor_id or session.pending_preparation_id is None:
                 return AgentResponse(
                     locale=request.locale,
                     intent=intent,
-                    message=self.renderer.no_pending_action(
-                        request.locale
-                    ),
+                    message=self.renderer.no_pending_action(request.locale),
                 )
 
             result = self.action_service.confirm_response(
@@ -213,9 +188,7 @@ class CommunityAgent:
                 confirmed=True,
             )
 
-            self.sessions.clear_pending_preparation(
-                request.session_id
-            )
+            self.sessions.clear_pending_preparation(request.session_id)
 
             return AgentResponse(
                 locale=request.locale,
@@ -229,7 +202,5 @@ class CommunityAgent:
         return AgentResponse(
             locale=request.locale,
             intent=AgentIntent.UNKNOWN,
-            message=self.renderer.no_pending_action(
-                request.locale
-            ),
+            message=self.renderer.no_pending_action(request.locale),
         )
