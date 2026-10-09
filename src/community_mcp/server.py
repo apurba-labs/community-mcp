@@ -1,3 +1,4 @@
+from pathlib import Path
 from uuid import UUID
 
 from mcp.server import MCPServer
@@ -17,6 +18,7 @@ from community_mcp.assistance.service import (
     AssistanceService,
     AssistanceUnavailableError,
 )
+from community_mcp.assistance.sqlite_store import SQLiteAssistanceStore
 from community_mcp.config import get_settings
 from community_mcp.policy.assistance import AssistancePolicy
 from community_mcp.providers.assistance import AssistanceContextProvider
@@ -52,7 +54,23 @@ def create_mcp_server(
     assistance_service = AssistanceService(resolved_assistance_provider)
     assistance_policy = AssistancePolicy()
     preparation_store = AssistancePreparationStore()
-    assistance_action_service = AssistanceActionService(preparation_store)
+
+    durable_store = None
+
+    if settings.demo_ledger_enabled:
+        if settings.data_provider != "demo":
+            raise ValueError(
+                "Durable demo assistance ledger requires DATA_PROVIDER=demo."
+            )
+
+        ledger_path = Path(settings.demo_ledger_path)
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        durable_store = SQLiteAssistanceStore(ledger_path)
+
+    assistance_action_service = AssistanceActionService(
+        preparation_store,
+        durable_store=durable_store,
+    )
 
     mcp = MCPServer(
         "Community MCP",
@@ -120,6 +138,10 @@ def create_mcp_server(
             actor_id: Authenticated actor identifier supplied by the caller.
             action: Assistance action the actor intends to perform.
         """
+        if settings.data_provider != "demo":
+            raise ValueError(
+                "Assistance response actions are disabled outside synthetic demo mode."
+            )
         try:
             request = await assistance_service.get_public_context(public_reference)
         except AssistanceNotFoundError as exc:
@@ -138,7 +160,10 @@ def create_mcp_server(
         )
 
         if prepared.confirmation_required:
-            preparation_store.save(prepared)
+            if durable_store is not None:
+                durable_store.save(prepared)
+            else:
+                preparation_store.save(prepared)
 
         return prepared
 
@@ -159,6 +184,10 @@ def create_mcp_server(
             actor_id: Authenticated actor identifier supplied by the caller.
             confirmed: Explicit confirmation of the prepared action.
         """
+        if settings.data_provider != "demo":
+            raise ValueError(
+                "Assistance response actions are disabled outside synthetic demo mode."
+            )
         try:
             return assistance_action_service.confirm_response(
                 preparation_id,

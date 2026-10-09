@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import Protocol
 from uuid import UUID, uuid4
 
 from community_mcp.assistance.preparation_store import (
@@ -9,6 +10,7 @@ from community_mcp.schemas.action import (
     AuditReceipt,
     ConfirmedAssistanceResponse,
     PolicyDecision,
+    PreparedAssistanceResponse,
 )
 
 
@@ -19,13 +21,29 @@ class ConfirmationRequiredError(Exception):
 class ActorMismatchError(Exception):
     pass
 
+class AssistanceActionStore(Protocol):
+    def save(
+        self,
+        response: PreparedAssistanceResponse,
+    ) -> PreparedAssistanceResponse: ...
+
+    def confirm_response(
+        self,
+        preparation_id: UUID,
+        *,
+        actor_id: str,
+        confirmed: bool,
+    ) -> ConfirmedAssistanceResponse: ...
 
 class AssistanceActionService:
     def __init__(
         self,
         preparation_store: AssistancePreparationStore,
+        *,
+        durable_store: AssistanceActionStore | None = None,
     ) -> None:
         self.preparation_store = preparation_store
+        self.durable_store = durable_store
 
     def confirm_response(
         self,
@@ -34,6 +52,13 @@ class AssistanceActionService:
         actor_id: str,
         confirmed: bool,
     ) -> ConfirmedAssistanceResponse:
+
+        if self.durable_store is not None:
+            return self.durable_store.confirm_response(
+                preparation_id,
+                actor_id=actor_id,
+                confirmed=confirmed,
+            )
         prepared = self.preparation_store.get(preparation_id)
 
         if prepared.decision != PolicyDecision.REQUIRES_CONFIRMATION:
