@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     bedrock_region: str = "us-east-1"
     bedrock_model_id: str = "amazon.nova-micro-v1:0"
 
+    demo_ledger_enabled: bool = False
+    demo_ledger_path: str = ".local/demo-assistance.sqlite3"
+
 
 @lru_cache
 def get_settings() -> Settings:
