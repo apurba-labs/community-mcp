@@ -15,9 +15,7 @@ from community_mcp.schemas.assistance import AssistanceAction
 
 
 async def prepare_response():
-    request = await AssistanceService().get_public_context(
-        "HELP-2026-001"
-    )
+    request = await AssistanceService().get_public_context("HELP-2026-001")
 
     prepared = AssistancePolicy().prepare_response(
         request,

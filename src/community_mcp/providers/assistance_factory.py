@@ -16,9 +16,7 @@ def create_assistance_provider(
         return DemoAssistanceProvider()
 
     if settings.gotihub_base_url is None:
-        raise ValueError(
-            "GOTIHUB_BASE_URL is required when DATA_PROVIDER=gotihub"
-        )
+        raise ValueError("GOTIHUB_BASE_URL is required when DATA_PROVIDER=gotihub")
 
     return GotiHubAssistanceProvider(
         str(settings.gotihub_base_url),

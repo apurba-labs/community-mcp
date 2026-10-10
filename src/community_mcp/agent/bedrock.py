@@ -69,6 +69,7 @@ Important:
 - Do not include explanations or markdown.
 """.strip()
 
+
 class BedrockDecision(BaseModel):
     intent: AgentIntent
     action: AssistanceAction | None = None
@@ -120,9 +121,7 @@ class BedrockReasoner(ReasoningProvider):
         try:
             parsed = BedrockDecision.model_validate_json(text)
         except ValidationError as exc:
-            raise ValueError(
-                "Bedrock returned an invalid agent decision"
-            ) from exc
+            raise ValueError("Bedrock returned an invalid agent decision") from exc
 
         self._validate_decision(parsed)
 
@@ -137,24 +136,12 @@ class BedrockReasoner(ReasoningProvider):
         try:
             return response["output"]["message"]["content"][0]["text"]
         except (KeyError, IndexError, TypeError) as exc:
-            raise ValueError(
-                "Bedrock response did not contain text output"
-            ) from exc
+            raise ValueError("Bedrock response did not contain text output") from exc
 
     @staticmethod
     def _validate_decision(decision: BedrockDecision) -> None:
-        if (
-            decision.intent == AgentIntent.ASSISTANCE_RESPONSE
-            and decision.action is None
-        ):
-            raise ValueError(
-                "Assistance response requires a canonical action"
-            )
+        if decision.intent == AgentIntent.ASSISTANCE_RESPONSE and decision.action is None:
+            raise ValueError("Assistance response requires a canonical action")
 
-        if (
-            decision.intent != AgentIntent.ASSISTANCE_RESPONSE
-            and decision.action is not None
-        ):
-            raise ValueError(
-                "Only assistance responses may contain an action"
-            )
+        if decision.intent != AgentIntent.ASSISTANCE_RESPONSE and decision.action is not None:
+            raise ValueError("Only assistance responses may contain an action")

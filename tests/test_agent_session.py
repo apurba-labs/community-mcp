@@ -65,10 +65,7 @@ def test_session_remembers_event_and_assistance_context() -> None:
     session = store.get("session-001")
 
     assert session.current_event_slug == "centenary-celebration"
-    assert (
-        session.current_assistance_reference
-        == "HELP-2026-001"
-    )
+    assert session.current_assistance_reference == "HELP-2026-001"
 
 
 def test_session_remembers_and_clears_pending_preparation() -> None:
@@ -87,17 +84,11 @@ def test_session_remembers_and_clears_pending_preparation() -> None:
         preparation_id,
     )
 
-    assert (
-        store.get("session-001").pending_preparation_id
-        == preparation_id
-    )
+    assert store.get("session-001").pending_preparation_id == preparation_id
 
     store.clear_pending_preparation("session-001")
 
-    assert (
-        store.get("session-001").pending_preparation_id
-        is None
-    )
+    assert store.get("session-001").pending_preparation_id is None
 
 
 def test_session_cannot_be_reused_by_different_actor() -> None:

@@ -37,9 +37,7 @@ class AssistancePolicy:
             reasons.append("Assistance request is not active.")
 
         if action not in request.allowed_actions:
-            reasons.append(
-                f"Action '{action.value}' is not allowed for this request."
-            )
+            reasons.append(f"Action '{action.value}' is not allowed for this request.")
 
         if reasons:
             return PreparedAssistanceResponse(

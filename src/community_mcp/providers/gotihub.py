@@ -38,9 +38,7 @@ class GotiHubProvider(CommunityDataProvider):
         response = await self._get("/api/v1/events")
 
         if response.is_error:
-            raise CommunityProviderError(
-                f"Community platform returned HTTP {response.status_code}"
-            )
+            raise CommunityProviderError(f"Community platform returned HTTP {response.status_code}")
 
         try:
             return _event_list_adapter.validate_python(response.json())
@@ -56,9 +54,7 @@ class GotiHubProvider(CommunityDataProvider):
             raise EventNotFoundError(slug)
 
         if response.is_error:
-            raise CommunityProviderError(
-                f"Community platform returned HTTP {response.status_code}"
-            )
+            raise CommunityProviderError(f"Community platform returned HTTP {response.status_code}")
 
         try:
             return EventDetail.model_validate(response.json())

@@ -29,10 +29,7 @@ class IntentRouter:
             "রক্ত দিতে চাই",
         )
 
-        if any(
-            term in normalized
-            for term in assistance_response_terms
-        ):
+        if any(term in normalized for term in assistance_response_terms):
             return AgentIntent.ASSISTANCE_RESPONSE
 
         assistance_terms = (

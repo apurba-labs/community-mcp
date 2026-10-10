@@ -28,9 +28,7 @@ class FakeBedrockClient:
 
 @pytest.mark.asyncio
 async def test_bedrock_reasoner_returns_donation_decision() -> None:
-    client = FakeBedrockClient(
-        '{"intent":"ASSISTANCE_RESPONSE","action":"DONATE_BLOOD"}'
-    )
+    client = FakeBedrockClient('{"intent":"ASSISTANCE_RESPONSE","action":"DONATE_BLOOD"}')
     reasoner = BedrockReasoner(client=client)
 
     decision = await reasoner.reason(
@@ -46,9 +44,7 @@ async def test_bedrock_reasoner_returns_donation_decision() -> None:
 
 @pytest.mark.asyncio
 async def test_bedrock_reasoner_preserves_bangla_locale() -> None:
-    client = FakeBedrockClient(
-        '{"intent":"ASSISTANCE_RESPONSE","action":"DONATE_BLOOD"}'
-    )
+    client = FakeBedrockClient('{"intent":"ASSISTANCE_RESPONSE","action":"DONATE_BLOOD"}')
     reasoner = BedrockReasoner(client=client)
 
     decision = await reasoner.reason(
@@ -62,9 +58,7 @@ async def test_bedrock_reasoner_preserves_bangla_locale() -> None:
 
 @pytest.mark.asyncio
 async def test_bedrock_reasoner_rejects_invalid_json() -> None:
-    reasoner = BedrockReasoner(
-        client=FakeBedrockClient("ASSISTANCE_RESPONSE")
-    )
+    reasoner = BedrockReasoner(client=FakeBedrockClient("ASSISTANCE_RESPONSE"))
 
     with pytest.raises(
         ValueError,
@@ -79,9 +73,7 @@ async def test_bedrock_reasoner_rejects_invalid_json() -> None:
 @pytest.mark.asyncio
 async def test_bedrock_reasoner_rejects_action_on_context_intent() -> None:
     reasoner = BedrockReasoner(
-        client=FakeBedrockClient(
-            '{"intent":"ASSISTANCE_CONTEXT","action":"DONATE_BLOOD"}'
-        )
+        client=FakeBedrockClient('{"intent":"ASSISTANCE_CONTEXT","action":"DONATE_BLOOD"}')
     )
 
     with pytest.raises(
@@ -97,9 +89,7 @@ async def test_bedrock_reasoner_rejects_action_on_context_intent() -> None:
 @pytest.mark.asyncio
 async def test_bedrock_reasoner_requires_action_for_response() -> None:
     reasoner = BedrockReasoner(
-        client=FakeBedrockClient(
-            '{"intent":"ASSISTANCE_RESPONSE","action":null}'
-        )
+        client=FakeBedrockClient('{"intent":"ASSISTANCE_RESPONSE","action":null}')
     )
 
     with pytest.raises(

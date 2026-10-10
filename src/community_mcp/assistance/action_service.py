@@ -21,6 +21,7 @@ class ConfirmationRequiredError(Exception):
 class ActorMismatchError(Exception):
     pass
 
+
 class AssistanceActionStore(Protocol):
     def save(
         self,
@@ -34,6 +35,7 @@ class AssistanceActionStore(Protocol):
         actor_id: str,
         confirmed: bool,
     ) -> ConfirmedAssistanceResponse: ...
+
 
 class AssistanceActionService:
     def __init__(

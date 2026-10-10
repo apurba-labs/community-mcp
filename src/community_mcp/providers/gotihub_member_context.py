@@ -42,18 +42,14 @@ class GotiHubMemberContextProvider(MemberContextProvider):
             ) as client:
                 return await client.get(path, headers=headers)
         except httpx.HTTPError as exc:
-            raise MemberContextUnavailableError(
-                "Unable to reach community platform"
-            ) from exc
+            raise MemberContextUnavailableError("Unable to reach community platform") from exc
 
     async def get_my_batch_context(
         self,
         actor_id: str,
     ) -> MyBatchContext:
         try:
-            access_token = await self._credential_provider.get_access_token(
-                actor_id
-            )
+            access_token = await self._credential_provider.get_access_token(actor_id)
         except AccessTokenUnavailableError as exc:
             raise MemberContextUnavailableError(actor_id) from exc
 

@@ -8,9 +8,7 @@ from community_mcp.schemas.assistance import AssistanceAction
 
 @pytest.mark.asyncio
 async def test_valid_response_requires_confirmation() -> None:
-    request = await AssistanceService().get_public_context(
-        "HELP-2026-001"
-    )
+    request = await AssistanceService().get_public_context("HELP-2026-001")
 
     result = AssistancePolicy().prepare_response(
         request,
@@ -26,9 +24,7 @@ async def test_valid_response_requires_confirmation() -> None:
 
 @pytest.mark.asyncio
 async def test_missing_actor_is_denied() -> None:
-    request = await AssistanceService().get_public_context(
-        "HELP-2026-001"
-    )
+    request = await AssistanceService().get_public_context("HELP-2026-001")
 
     result = AssistancePolicy().prepare_response(
         request,
@@ -43,9 +39,7 @@ async def test_missing_actor_is_denied() -> None:
 
 @pytest.mark.asyncio
 async def test_disallowed_action_is_denied() -> None:
-    request = await AssistanceService().get_public_context(
-        "HELP-2026-001"
-    )
+    request = await AssistanceService().get_public_context("HELP-2026-001")
 
     request.allowed_actions = [AssistanceAction.SHARE]
 
