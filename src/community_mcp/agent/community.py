@@ -9,18 +9,25 @@ from community_mcp.agent.schemas import (
     AgentResponse,
 )
 from community_mcp.agent.session import AgentSessionStore
-from community_mcp.assistance.action_service import AssistanceActionService
+from community_mcp.assistance.action_service import (
+    AssistanceActionService,
+    AssistanceActionStore,
+)
 from community_mcp.assistance.preparation_store import AssistancePreparationStore
 from community_mcp.assistance.service import AssistanceService
 from community_mcp.policy.assistance import AssistancePolicy
 from community_mcp.providers.assistance import AssistanceContextProvider
 from community_mcp.providers.base import CommunityDataProvider
+from community_mcp.providers.demo import DemoProvider
 from community_mcp.providers.demo_assistance import DemoAssistanceProvider
 from community_mcp.providers.member_context import (
     MemberContextProvider,
     MemberContextUnavailableError,
 )
-from community_mcp.schemas.action import PolicyDecision
+from community_mcp.schemas.action import (
+    PolicyDecision,
+    PreparedAssistanceResponse,
+)
 
 
 class CommunityAgent:
@@ -33,8 +40,12 @@ class CommunityAgent:
         assistance_provider: AssistanceContextProvider | None = None,
         event_slug: str = "centenary-celebration",
         assistance_reference: str = "HELP-2026-001",
+        durable_store: AssistanceActionStore | None = None,
+        allow_demo_actions: bool = False,
     ) -> None:
         self.provider = provider
+        if allow_demo_actions and not isinstance(provider, DemoProvider):
+            raise ValueError("Synthetic assistance actions require DemoProvider.")
         self.event_slug = event_slug
         self.assistance_reference = assistance_reference
 
@@ -46,7 +57,22 @@ class CommunityAgent:
         self.assistance_service = AssistanceService(assistance_provider or DemoAssistanceProvider())
         self.assistance_policy = AssistancePolicy()
         self.preparation_store = AssistancePreparationStore()
-        self.action_service = AssistanceActionService(self.preparation_store)
+        self.durable_store = durable_store
+        self.allow_demo_actions = allow_demo_actions
+
+        self.action_service = AssistanceActionService(
+            self.preparation_store,
+            durable_store=durable_store,
+        )
+
+    def _save_preparation(
+        self,
+        prepared: PreparedAssistanceResponse,
+    ) -> None:
+        if self.durable_store is not None:
+            self.durable_store.save(prepared)
+        else:
+            self.preparation_store.save(prepared)
 
     async def handle(
         self,
@@ -133,6 +159,12 @@ class CommunityAgent:
             )
 
         if intent == AgentIntent.ASSISTANCE_RESPONSE:
+            if not self.allow_demo_actions:
+                return AgentResponse(
+                    locale=request.locale,
+                    intent=intent,
+                    message="Assistance actions are disabled for this integration.",
+                )
             if not session.actor_id:
                 return AgentResponse(
                     locale=request.locale,
@@ -159,22 +191,36 @@ class CommunityAgent:
                 actor_id=session.actor_id,
                 action=decision.action,
             )
-            if prepared.decision == PolicyDecision.REQUIRES_CONFIRMATION:
-                self.preparation_store.save(prepared)
-                self.sessions.set_pending_preparation(
-                    request.session_id,
-                    prepared.preparation_id,
+
+            if prepared.decision != PolicyDecision.REQUIRES_CONFIRMATION:
+                return AgentResponse(
+                    locale=request.locale,
+                    intent=intent,
+                    message="This action is not permitted for the selected assistance request.",
                 )
+
+            self._save_preparation(prepared)
+
+            self.sessions.set_pending_preparation(
+                request.session_id,
+                prepared.preparation_id,
+            )
 
             return AgentResponse(
                 locale=request.locale,
                 intent=intent,
                 message=self.renderer.confirmation_required(request.locale),
-                requires_confirmation=(prepared.confirmation_required),
+                requires_confirmation=True,
                 preparation_id=str(prepared.preparation_id),
             )
 
         if intent == AgentIntent.CONFIRM_ACTION:
+            if not self.allow_demo_actions:
+                return AgentResponse(
+                    locale=request.locale,
+                    intent=intent,
+                    message="Assistance actions are disabled for this integration.",
+                )
             if not session.actor_id or session.pending_preparation_id is None:
                 return AgentResponse(
                     locale=request.locale,

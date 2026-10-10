@@ -9,6 +9,7 @@ from community_mcp.agent.reasoning import (
 )
 from community_mcp.agent.safe_reasoning import SafeReasoner
 from community_mcp.agent.schemas import AgentRequest, SupportedLocale
+from community_mcp.assistance.sqlite_store import SQLiteAssistanceStore
 from community_mcp.config import Settings, get_settings
 from community_mcp.providers.demo import DemoProvider
 from community_mcp.providers.demo_member_context import (
@@ -39,11 +40,19 @@ def build_reasoner(settings: Settings) -> ReasoningProvider:
 async def run_demo() -> None:
     settings = get_settings()
     reasoner = build_reasoner(settings)
+    if settings.data_provider != "demo":
+        raise RuntimeError("Interactive synthetic actions require DATA_PROVIDER=demo.")
+
+    durable_store = (
+        SQLiteAssistanceStore(settings.demo_ledger_path) if settings.demo_ledger_enabled else None
+    )
 
     agent = CommunityAgent(
         DemoProvider(),
         reasoner=reasoner,
         member_context_provider=DemoMemberContextProvider(),
+        durable_store=durable_store,
+        allow_demo_actions=True,
     )
 
     session_id = f"demo-{uuid4()}"
