@@ -124,6 +124,23 @@ class BedrockReasoner(ReasoningProvider):
             raise ValueError("Bedrock returned an invalid agent decision") from exc
 
         self._validate_decision(parsed)
+        generic_affirmatives = {
+            "yes",
+            "yeah",
+            "yep",
+            "ok",
+            "okay",
+            "হ্যাঁ",
+            "হ্যা",
+            "জি",
+            "ঠিক আছে",
+        }
+
+        if (
+            parsed.intent == AgentIntent.CONFIRM_ACTION
+            and message.strip().lower().rstrip("।.!?") in generic_affirmatives
+        ):
+            parsed.intent = AgentIntent.UNKNOWN
 
         return AgentDecision(
             intent=parsed.intent,

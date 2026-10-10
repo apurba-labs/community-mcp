@@ -37,6 +37,7 @@ async def test_event_renderer_uses_event_program() -> None:
     assert event.title in message
     assert event.program[0].title in message
 
+
 @pytest.mark.asyncio
 async def test_event_renderer_handles_unconfirmed_date_and_empty_program() -> None:
     event = await DemoProvider().get_event_by_slug("centenary-celebration")

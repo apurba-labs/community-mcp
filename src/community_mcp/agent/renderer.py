@@ -17,9 +17,7 @@ class BilingualRenderer:
             if event.starts_at is None:
                 parts.append("অনুষ্ঠানের তারিখ এখনো নিশ্চিত করা হয়নি।")
             else:
-                parts.append(
-                    f"অনুষ্ঠান শুরু হবে {event.starts_at:%d-%m-%Y %H:%M} তারিখে।"
-                )
+                parts.append(f"অনুষ্ঠান শুরু হবে {event.starts_at:%d-%m-%Y %H:%M} তারিখে।")
 
             if event.program:
                 program = ", ".join(item.title for item in event.program)
@@ -32,9 +30,7 @@ class BilingualRenderer:
         if event.starts_at is None:
             parts.append("The event date has not yet been confirmed.")
         else:
-            parts.append(
-                f"The event starts on {event.starts_at:%d %B %Y at %H:%M}."
-            )
+            parts.append(f"The event starts on {event.starts_at:%d %B %Y at %H:%M}.")
 
         if event.program:
             program = ", ".join(item.title for item in event.program)
