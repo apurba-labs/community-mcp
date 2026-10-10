@@ -29,6 +29,8 @@ class Settings(BaseSettings):
 
     data_provider: Literal["demo", "gotihub"] = "demo"
     gotihub_base_url: OptionalHttpUrl = None
+    gotihub_organization_slug: str | None = None
+    gotihub_service_token: str | None = None
 
     reasoning_provider: Literal["deterministic", "bedrock"] = "deterministic"
 

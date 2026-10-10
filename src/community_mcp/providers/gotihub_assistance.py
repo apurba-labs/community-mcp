@@ -67,10 +67,14 @@ class GotiHubAssistanceProvider(AssistanceContextProvider):
         credential_provider: AccessTokenProvider | None = None,
         *,
         client: httpx.AsyncClient | None = None,
+        organization_slug: str | None = None,
+        service_token: str | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._credential_provider = credential_provider
         self._client = client
+        self._organization_slug = organization_slug
+        self._service_token = service_token
 
     async def _get(
         self,
@@ -117,7 +121,19 @@ class GotiHubAssistanceProvider(AssistanceContextProvider):
         self,
         public_reference: str,
     ) -> AssistanceRequest:
-        response = await self._get("/api/v1/assistance/public/requests")
+        if self._organization_slug:
+            if not self._service_token:
+                raise AssistanceContextUnavailableError(
+                    "Community service credentials are unavailable"
+                )
+
+            response = await self._get(
+                f"/api/v1/integrations/community/organizations/"
+                f"{self._organization_slug}/assistance",
+                access_token=self._service_token,
+            )
+        else:
+            response = await self._get("/api/v1/assistance/public/requests")
 
         if response.is_error:
             raise AssistanceContextUnavailableError(

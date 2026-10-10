@@ -67,3 +67,40 @@ async def test_get_event_by_slug_maps_not_found() -> None:
 
         with pytest.raises(EventNotFoundError):
             await provider.get_event_by_slug("missing-event")
+
+
+@pytest.mark.asyncio
+async def test_service_token_only_sent_to_protected_event_endpoint() -> None:
+    requests_seen = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests_seen.append(request)
+
+        if request.url.path.endswith("/events"):
+            return httpx.Response(200, json=[])
+
+        return httpx.Response(404, json={"detail": "Not found"})
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        base_url="https://community.example.org",
+    ) as client:
+        provider = GotiHubProvider(
+            "https://community.example.org",
+            organization_slug="test-school",
+            service_token="synthetic-test-token",
+            client=client,
+        )
+
+        await provider.list_events()
+
+        with pytest.raises(EventNotFoundError):
+            await provider.get_event_by_slug("missing-event")
+
+    assert requests_seen[0].url.path == (
+        "/api/v1/integrations/community/organizations/test-school/events"
+    )
+    assert requests_seen[0].headers["Authorization"] == ("Bearer synthetic-test-token")
+
+    assert requests_seen[1].url.path == "/api/v1/events/slug/missing-event"
+    assert "Authorization" not in requests_seen[1].headers

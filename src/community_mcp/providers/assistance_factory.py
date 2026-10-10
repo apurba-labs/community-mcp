@@ -18,7 +18,15 @@ def create_assistance_provider(
     if settings.gotihub_base_url is None:
         raise ValueError("GOTIHUB_BASE_URL is required when DATA_PROVIDER=gotihub")
 
+    if not settings.gotihub_organization_slug or not settings.gotihub_service_token:
+        raise ValueError(
+            "GOTIHUB_ORGANIZATION_SLUG and GOTIHUB_SERVICE_TOKEN "
+            "are required when DATA_PROVIDER=gotihub"
+        )
+
     return GotiHubAssistanceProvider(
         str(settings.gotihub_base_url),
         credential_provider,
+        organization_slug=settings.gotihub_organization_slug,
+        service_token=settings.gotihub_service_token,
     )
