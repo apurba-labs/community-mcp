@@ -36,3 +36,27 @@ async def test_event_renderer_uses_event_program() -> None:
 
     assert event.title in message
     assert event.program[0].title in message
+
+@pytest.mark.asyncio
+async def test_event_renderer_handles_unconfirmed_date_and_empty_program() -> None:
+    event = await DemoProvider().get_event_by_slug("centenary-celebration")
+
+    event = event.model_copy(
+        update={
+            "starts_at": None,
+            "program": [],
+        }
+    )
+
+    renderer = BilingualRenderer()
+
+    english = renderer.event_context(event, SupportedLocale.EN)
+    bangla = renderer.event_context(event, SupportedLocale.BN)
+
+    assert event.title in english
+    assert "date has not yet been confirmed" in english
+    assert "Main activities:" not in english
+
+    assert event.title in bangla
+    assert "তারিখ এখনো নিশ্চিত করা হয়নি" in bangla
+    assert "প্রধান কার্যক্রম:" not in bangla

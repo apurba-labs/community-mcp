@@ -11,12 +11,36 @@ class BilingualRenderer:
         event: EventDetail,
         locale: SupportedLocale,
     ) -> str:
-        program = ", ".join(item.title for item in event.program)
-
         if locale == SupportedLocale.BN:
-            return f"{event.title} অনুষ্ঠানের প্রধান কার্যক্রম: {program}।"
+            parts = [f"{event.title} অনুষ্ঠানটি ঘোষণা করা হয়েছে।"]
 
-        return f"The main activities for {event.title} are: {program}."
+            if event.starts_at is None:
+                parts.append("অনুষ্ঠানের তারিখ এখনো নিশ্চিত করা হয়নি।")
+            else:
+                parts.append(
+                    f"অনুষ্ঠান শুরু হবে {event.starts_at:%d-%m-%Y %H:%M} তারিখে।"
+                )
+
+            if event.program:
+                program = ", ".join(item.title for item in event.program)
+                parts.append(f"প্রধান কার্যক্রম: {program}।")
+
+            return " ".join(parts)
+
+        parts = [f"{event.title} has been announced."]
+
+        if event.starts_at is None:
+            parts.append("The event date has not yet been confirmed.")
+        else:
+            parts.append(
+                f"The event starts on {event.starts_at:%d %B %Y at %H:%M}."
+            )
+
+        if event.program:
+            program = ", ".join(item.title for item in event.program)
+            parts.append(f"Main activities: {program}.")
+
+        return " ".join(parts)
 
     def community_context(
         self,
