@@ -12,9 +12,7 @@ async def test_assistance_context_is_exposed_through_mcp() -> None:
     async with Client(mcp, raise_exceptions=True) as client:
         tools = await client.list_tools()
 
-        assert {
-            tool.name for tool in tools.tools
-        } == {
+        assert {tool.name for tool in tools.tools} == {
             "get_event_context",
             "get_assistance_context",
             "prepare_assistance_response",

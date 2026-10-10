@@ -15,6 +15,7 @@ class AgentDecision(BaseModel):
     locale: SupportedLocale
     action: AssistanceAction | None = None
 
+
 class ReasoningProvider(ABC):
     @abstractmethod
     async def reason(

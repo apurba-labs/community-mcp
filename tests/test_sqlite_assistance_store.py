@@ -127,8 +127,6 @@ async def test_failed_audit_insert_rolls_back_entire_confirmation(tmp_path):
     assert store.get_confirmed_response(prepared.preparation_id) is None
 
     with sqlite3.connect(database) as connection:
-        response_count = connection.execute(
-            "SELECT COUNT(*) FROM responses"
-        ).fetchone()[0]
+        response_count = connection.execute("SELECT COUNT(*) FROM responses").fetchone()[0]
 
     assert response_count == 0

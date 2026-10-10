@@ -37,9 +37,7 @@ class SafeReasoner(ReasoningProvider):
         confirmation_gate: ConfirmationGate | None = None,
     ) -> None:
         self.delegate = delegate
-        self.confirmation_gate = (
-            confirmation_gate or ConfirmationGate()
-        )
+        self.confirmation_gate = confirmation_gate or ConfirmationGate()
 
     async def reason(
         self,

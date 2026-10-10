@@ -10,12 +10,7 @@ from community_mcp.schemas.assistance import (
 
 
 def test_demo_blood_assistance_is_public_safe() -> None:
-    fixture = (
-        Path(__file__).parents[1]
-        / "demo"
-        / "fixtures"
-        / "assistance.json"
-    )
+    fixture = Path(__file__).parents[1] / "demo" / "fixtures" / "assistance.json"
 
     payload = json.loads(fixture.read_text())[0]
     request = AssistanceRequest.model_validate(payload)

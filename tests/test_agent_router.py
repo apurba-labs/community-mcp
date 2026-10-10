@@ -65,10 +65,8 @@ def test_bilingual_intent_routing(
 
 
 def test_unknown_message_is_not_invented_as_an_intent() -> None:
-    assert (
-        IntentRouter().classify("Tell me something interesting")
-        == AgentIntent.UNKNOWN
-    )
+    assert IntentRouter().classify("Tell me something interesting") == AgentIntent.UNKNOWN
+
 
 @pytest.mark.parametrize(
     "message",
@@ -82,7 +80,4 @@ def test_unknown_message_is_not_invented_as_an_intent() -> None:
 def test_generic_affirmative_is_not_confirmation(
     message: str,
 ) -> None:
-    assert (
-        IntentRouter().classify(message)
-        != AgentIntent.CONFIRM_ACTION
-    )
+    assert IntentRouter().classify(message) != AgentIntent.CONFIRM_ACTION

@@ -11,20 +11,12 @@ class BilingualRenderer:
         event: EventDetail,
         locale: SupportedLocale,
     ) -> str:
-        program = ", ".join(
-            item.title for item in event.program
-        )
+        program = ", ".join(item.title for item in event.program)
 
         if locale == SupportedLocale.BN:
-            return (
-                f"{event.title} অনুষ্ঠানের প্রধান কার্যক্রম: "
-                f"{program}।"
-            )
+            return f"{event.title} অনুষ্ঠানের প্রধান কার্যক্রম: {program}।"
 
-        return (
-            f"The main activities for {event.title} are: "
-            f"{program}."
-        )
+        return f"The main activities for {event.title} are: {program}."
 
     def community_context(
         self,
@@ -48,14 +40,9 @@ class BilingualRenderer:
         locale: SupportedLocale,
     ) -> str:
         if locale == SupportedLocale.BN:
-            return (
-                "আপনার অ্যালামনাই ব্যাচের তথ্য এখন নিরাপদভাবে "
-                "যাচাই করা যাচ্ছে না।"
-            )
+            return "আপনার অ্যালামনাই ব্যাচের তথ্য এখন নিরাপদভাবে যাচাই করা যাচ্ছে না।"
 
-        return (
-            "Your alumni batch context cannot be securely resolved right now."
-        )
+        return "Your alumni batch context cannot be securely resolved right now."
 
     def assistance_context(
         self,
@@ -65,14 +52,10 @@ class BilingualRenderer:
         blood_group = request.blood_group or "N/A"
 
         if locale == SupportedLocale.BN:
-            return (
-                f"একটি যাচাইকৃত {blood_group} রক্তের অনুরোধ রয়েছে। "
-                f"স্থান: {request.location_text}।"
-            )
+            return f"একটি যাচাইকৃত {blood_group} রক্তের অনুরোধ রয়েছে। স্থান: {request.location_text}।"
 
         return (
-            f"There is a verified {blood_group} blood request. "
-            f"Location: {request.location_text}."
+            f"There is a verified {blood_group} blood request. Location: {request.location_text}."
         )
 
     def confirmation_required(
@@ -104,10 +87,7 @@ class BilingualRenderer:
 
     def unknown(self, locale: SupportedLocale) -> str:
         if locale == SupportedLocale.BN:
-            return (
-                "আমি এই অনুরোধটি এখনো বুঝতে পারিনি। "
-                "অনুষ্ঠান বা কমিউনিটি সহায়তা সম্পর্কে জিজ্ঞাসা করতে পারেন।"
-            )
+            return "আমি এই অনুরোধটি এখনো বুঝতে পারিনি। অনুষ্ঠান বা কমিউনিটি সহায়তা সম্পর্কে জিজ্ঞাসা করতে পারেন।"
 
         return (
             "I couldn't understand that request yet. "
@@ -119,12 +99,6 @@ class BilingualRenderer:
         locale: SupportedLocale,
     ) -> str:
         if locale == SupportedLocale.BN:
-            return (
-                "নিশ্চিত করার মতো কোনো প্রস্তুত কার্যক্রম নেই। "
-                "প্রথমে আপনি কীভাবে সাহায্য করতে চান তা জানান।"
-            )
+            return "নিশ্চিত করার মতো কোনো প্রস্তুত কার্যক্রম নেই। প্রথমে আপনি কীভাবে সাহায্য করতে চান তা জানান।"
 
-        return (
-            "There is no pending action to confirm. "
-            "First tell me how you'd like to help."
-        )
+        return "There is no pending action to confirm. First tell me how you'd like to help."

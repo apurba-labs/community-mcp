@@ -41,9 +41,7 @@ async def test_assistance_response_requires_prepare_then_confirm() -> None:
     assert result["response"]["actor_id"] == "demo-member-001"
     assert result["response"]["action"] == "DONATE_BLOOD"
 
-    assert result["audit"]["event_type"] == (
-        "ASSISTANCE_RESPONSE_RECORDED"
-    )
+    assert result["audit"]["event_type"] == ("ASSISTANCE_RESPONSE_RECORDED")
     assert result["audit"]["actor_id"] == "demo-member-001"
 
 
@@ -61,9 +59,7 @@ async def test_mcp_rejects_replay_of_confirmed_response() -> None:
             },
         )
 
-        preparation_id = prepared_result.structured_content[
-            "preparation_id"
-        ]
+        preparation_id = prepared_result.structured_content["preparation_id"]
 
         first = await client.call_tool(
             "confirm_assistance_response",

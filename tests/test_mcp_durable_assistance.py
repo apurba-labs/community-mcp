@@ -53,9 +53,8 @@ async def test_mcp_confirmation_survives_server_restart(
         )
 
     assert confirmed_result.is_error is False
-    assert (
-        UUID(confirmed_result.structured_content["response"]["preparation_id"])
-        == UUID(preparation_id)
+    assert UUID(confirmed_result.structured_content["response"]["preparation_id"]) == UUID(
+        preparation_id
     )
 
     another_server = create_mcp_server(DemoProvider())

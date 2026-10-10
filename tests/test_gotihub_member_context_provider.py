@@ -41,9 +41,7 @@ async def test_get_my_batch_context_uses_actor_scoped_bearer_token() -> None:
             },
         )
 
-    credentials = StubAccessTokenProvider(
-        {"member-001": "actor-token-001"}
-    )
+    credentials = StubAccessTokenProvider({"member-001": "actor-token-001"})
 
     async with httpx.AsyncClient(
         transport=httpx.MockTransport(handler),
@@ -99,9 +97,7 @@ async def test_private_context_failure_does_not_expose_platform_detail(
             json={"detail": "private platform detail"},
         )
 
-    credentials = StubAccessTokenProvider(
-        {"member-001": "actor-token-001"}
-    )
+    credentials = StubAccessTokenProvider({"member-001": "actor-token-001"})
 
     async with httpx.AsyncClient(
         transport=httpx.MockTransport(handler),
@@ -130,9 +126,7 @@ async def test_invalid_member_context_response_fails_closed() -> None:
             },
         )
 
-    credentials = StubAccessTokenProvider(
-        {"member-001": "actor-token-001"}
-    )
+    credentials = StubAccessTokenProvider({"member-001": "actor-token-001"})
 
     async with httpx.AsyncClient(
         transport=httpx.MockTransport(handler),

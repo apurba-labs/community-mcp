@@ -46,14 +46,8 @@ class AgentSessionStore:
             self._sessions[session_id] = session
             return session
 
-        if (
-            session.actor_id is not None
-            and actor_id is not None
-            and session.actor_id != actor_id
-        ):
-            raise SessionActorMismatchError(
-                f"Session {session_id!r} belongs to another actor."
-            )
+        if session.actor_id is not None and actor_id is not None and session.actor_id != actor_id:
+            raise SessionActorMismatchError(f"Session {session_id!r} belongs to another actor.")
 
         if session.actor_id is None and actor_id is not None:
             session.actor_id = actor_id
@@ -65,9 +59,7 @@ class AgentSessionStore:
         session = self._sessions.get(session_id)
 
         if session is None:
-            raise SessionNotFoundError(
-                f"Session {session_id!r} does not exist."
-            )
+            raise SessionNotFoundError(f"Session {session_id!r} does not exist.")
 
         return session
 
@@ -83,18 +75,14 @@ class AgentSessionStore:
         session_id: str,
         public_reference: str,
     ) -> None:
-        self.get(
-            session_id
-        ).current_assistance_reference = public_reference
+        self.get(session_id).current_assistance_reference = public_reference
 
     def set_pending_preparation(
         self,
         session_id: str,
         preparation_id: UUID,
     ) -> None:
-        self.get(
-            session_id
-        ).pending_preparation_id = preparation_id
+        self.get(session_id).pending_preparation_id = preparation_id
 
     def clear_pending_preparation(
         self,

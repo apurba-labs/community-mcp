@@ -49,11 +49,7 @@ async def evaluate_case(
     expected_intent = str(case["expected_intent"])
 
     raw_expected_action = case.get("expected_action")
-    expected_action = (
-        str(raw_expected_action)
-        if raw_expected_action is not None
-        else None
-    )
+    expected_action = str(raw_expected_action) if raw_expected_action is not None else None
 
     try:
         decision = await reasoner.reason(
@@ -78,24 +74,12 @@ async def evaluate_case(
         )
 
     predicted_intent = decision.intent.value
-    predicted_action = (
-        decision.action.value
-        if decision.action is not None
-        else None
-    )
+    predicted_action = decision.action.value if decision.action is not None else None
 
     false_action = (
-        (
-            expected_intent
-            != AgentIntent.ASSISTANCE_RESPONSE.value
-            and predicted_intent
-            == AgentIntent.ASSISTANCE_RESPONSE.value
-        )
-        or (
-            expected_action is None
-            and predicted_action is not None
-        )
-    )
+        expected_intent != AgentIntent.ASSISTANCE_RESPONSE.value
+        and predicted_intent == AgentIntent.ASSISTANCE_RESPONSE.value
+    ) or (expected_action is None and predicted_action is not None)
 
     false_confirmation = (
         expected_intent != AgentIntent.CONFIRM_ACTION.value
@@ -143,47 +127,27 @@ def print_summary(
 ) -> None:
     total = len(results)
     valid = sum(result.valid for result in results)
-    intent_correct = sum(
-        result.intent_correct for result in results
-    )
-    action_correct = sum(
-        result.action_correct for result in results
-    )
+    intent_correct = sum(result.intent_correct for result in results)
+    action_correct = sum(result.action_correct for result in results)
 
-    english = [
-        result for result in results if result.locale == "en"
-    ]
-    bangla = [
-        result for result in results if result.locale == "bn"
-    ]
+    english = [result for result in results if result.locale == "en"]
+    bangla = [result for result in results if result.locale == "bn"]
 
-    english_correct = sum(
-        result.intent_correct for result in english
-    )
-    bangla_correct = sum(
-        result.intent_correct for result in bangla
-    )
+    english_correct = sum(result.intent_correct for result in english)
+    bangla_correct = sum(result.intent_correct for result in bangla)
 
-    false_actions = sum(
-        result.false_action for result in results
-    )
-    false_confirmations = sum(
-        result.false_confirmation for result in results
-    )
+    false_actions = sum(result.false_action for result in results)
+    false_confirmations = sum(result.false_confirmation for result in results)
 
     print()
     print(f"Reasoner: {provider_name}")
     print("=" * 52)
     print(f"Cases:               {total}")
     print(
-        "Intent accuracy:     "
-        f"{intent_correct}/{total} "
-        f"({percentage(intent_correct, total):.1f}%)"
+        f"Intent accuracy:     {intent_correct}/{total} ({percentage(intent_correct, total):.1f}%)"
     )
     print(
-        "Action accuracy:     "
-        f"{action_correct}/{total} "
-        f"({percentage(action_correct, total):.1f}%)"
+        f"Action accuracy:     {action_correct}/{total} ({percentage(action_correct, total):.1f}%)"
     )
     print(
         "English accuracy:    "
@@ -202,11 +166,7 @@ def print_summary(
     failures = [
         result
         for result in results
-        if (
-            not result.valid
-            or not result.intent_correct
-            or not result.action_correct
-        )
+        if (not result.valid or not result.intent_correct or not result.action_correct)
     ]
 
     if not failures:
@@ -220,14 +180,8 @@ def print_summary(
 
     for result in failures:
         print(f"[{result.case_id}] {result.message}")
-        print(
-            f"  expected: {result.expected_intent}"
-            f" / {result.expected_action}"
-        )
-        print(
-            f"  predicted: {result.predicted_intent}"
-            f" / {result.predicted_action}"
-        )
+        print(f"  expected: {result.expected_intent} / {result.expected_action}")
+        print(f"  predicted: {result.predicted_intent} / {result.predicted_action}")
 
         if result.error:
             print(f"  error: {result.error}")
@@ -252,9 +206,7 @@ def build_reasoner(
             )
         )
 
-    raise ValueError(
-        f"Unsupported reasoning provider: {provider_name}"
-    )
+    raise ValueError(f"Unsupported reasoning provider: {provider_name}")
 
 
 async def main() -> None:

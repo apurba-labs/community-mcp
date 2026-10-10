@@ -26,9 +26,7 @@ class AssistancePreparationStore:
         self,
         response: PreparedAssistanceResponse,
     ) -> PreparedAssistanceResponse:
-        self._items[response.preparation_id] = StoredPreparation(
-            response=response
-        )
+        self._items[response.preparation_id] = StoredPreparation(response=response)
         return response
 
     def get(self, preparation_id: UUID) -> PreparedAssistanceResponse:

@@ -27,10 +27,7 @@ class DemoProvider(CommunityDataProvider):
             raise CommunityProviderError("Unable to load demo event data") from exc
 
     async def list_events(self) -> list[EventSummary]:
-        return [
-            EventSummary.model_validate(event.model_dump())
-            for event in self._load_events()
-        ]
+        return [EventSummary.model_validate(event.model_dump()) for event in self._load_events()]
 
     async def get_event_by_slug(self, slug: str) -> EventDetail:
         for event in self._load_events():

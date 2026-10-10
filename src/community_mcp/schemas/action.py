@@ -22,6 +22,7 @@ class PreparedAssistanceResponse(BaseModel):
     confirmation_message: str
     policy_reasons: list[str]
 
+
 class AssistanceResponseRecord(BaseModel):
     response_id: UUID
     preparation_id: UUID

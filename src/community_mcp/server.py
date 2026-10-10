@@ -47,9 +47,7 @@ def create_mcp_server(
 ) -> MCPServer:
     settings = get_settings()
     data_provider = provider or create_provider(settings)
-    resolved_assistance_provider = (
-        assistance_provider or create_assistance_provider(settings)
-    )
+    resolved_assistance_provider = assistance_provider or create_assistance_provider(settings)
 
     assistance_service = AssistanceService(resolved_assistance_provider)
     assistance_policy = AssistancePolicy()
@@ -59,9 +57,7 @@ def create_mcp_server(
 
     if settings.demo_ledger_enabled:
         if settings.data_provider != "demo":
-            raise ValueError(
-                "Durable demo assistance ledger requires DATA_PROVIDER=demo."
-            )
+            raise ValueError("Durable demo assistance ledger requires DATA_PROVIDER=demo.")
 
         ledger_path = Path(settings.demo_ledger_path)
         ledger_path.parent.mkdir(parents=True, exist_ok=True)
@@ -94,9 +90,7 @@ def create_mcp_server(
         try:
             return await data_provider.get_event_by_slug(event_slug)
         except EventNotFoundError as exc:
-            raise ValueError(
-                f"No public event was found with slug '{event_slug}'."
-            ) from exc
+            raise ValueError(f"No public event was found with slug '{event_slug}'.") from exc
 
     @mcp.tool()
     async def get_assistance_context(
@@ -113,13 +107,9 @@ def create_mcp_server(
         try:
             return await assistance_service.get_public_context(public_reference)
         except AssistanceNotFoundError as exc:
-            raise ValueError(
-                f"No assistance request was found for '{public_reference}'."
-            ) from exc
+            raise ValueError(f"No assistance request was found for '{public_reference}'.") from exc
         except AssistanceUnavailableError as exc:
-            raise ValueError(
-                f"Assistance request '{public_reference}' is not available."
-            ) from exc
+            raise ValueError(f"Assistance request '{public_reference}' is not available.") from exc
 
     @mcp.tool()
     async def prepare_assistance_response(
@@ -145,13 +135,9 @@ def create_mcp_server(
         try:
             request = await assistance_service.get_public_context(public_reference)
         except AssistanceNotFoundError as exc:
-            raise ValueError(
-                f"No assistance request was found for '{public_reference}'."
-            ) from exc
+            raise ValueError(f"No assistance request was found for '{public_reference}'.") from exc
         except AssistanceUnavailableError as exc:
-            raise ValueError(
-                f"Assistance request '{public_reference}' is not available."
-            ) from exc
+            raise ValueError(f"Assistance request '{public_reference}' is not available.") from exc
 
         prepared = assistance_policy.prepare_response(
             request,
@@ -195,23 +181,16 @@ def create_mcp_server(
                 confirmed=confirmed,
             )
         except PreparationNotFoundError as exc:
-            raise ValueError(
-                "The prepared assistance response does not exist."
-            ) from exc
+            raise ValueError("The prepared assistance response does not exist.") from exc
         except PreparationAlreadyConsumedError as exc:
-            raise ValueError(
-                "The prepared assistance response has already been used."
-            ) from exc
+            raise ValueError("The prepared assistance response has already been used.") from exc
         except ConfirmationRequiredError as exc:
-            raise ValueError(
-                "Explicit confirmation is required."
-            ) from exc
+            raise ValueError("Explicit confirmation is required.") from exc
         except ActorMismatchError as exc:
-            raise ValueError(
-                "The confirming actor does not match the prepared response."
-            ) from exc
+            raise ValueError("The confirming actor does not match the prepared response.") from exc
 
     return mcp
+
 
 mcp = create_mcp_server()
 
