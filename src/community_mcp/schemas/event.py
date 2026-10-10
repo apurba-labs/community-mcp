@@ -44,8 +44,8 @@ class EventSchedule(BaseModel):
     title: str
     description: str | None
     schedule_type: str
-    starts_at: datetime
-    ends_at: datetime
+    starts_at: datetime | None
+    starts_at: datetime | None
     venue_id: UUID | None
     location_text: str | None
     registration_required: bool
@@ -61,7 +61,7 @@ class EventSummary(BaseModel):
     slug: str
     short_description: str | None
     event_type: EventType
-    starts_at: datetime
+    starts_at: datetime | None
     ends_at: datetime | None
     timezone: str
     registration_enabled: bool

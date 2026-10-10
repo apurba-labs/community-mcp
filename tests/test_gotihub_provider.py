@@ -21,8 +21,8 @@ async def test_list_events_maps_public_response() -> None:
                     "slug": "centenary-celebration",
                     "short_description": "Celebrating 100 years.",
                     "event_type": "CENTENARY",
-                    "starts_at": "2026-12-18T09:00:00+06:00",
-                    "ends_at": "2026-12-19T21:00:00+06:00",
+                    "starts_at": None,
+                    "ends_at": None,
                     "timezone": "Asia/Dhaka",
                     "registration_enabled": True,
                     "capacity": None,
@@ -46,6 +46,8 @@ async def test_list_events_maps_public_response() -> None:
     assert events[0].id == UUID("11111111-1111-1111-1111-111111111111")
     assert events[0].slug == "centenary-celebration"
     assert events[0].event_type == "CENTENARY"
+    assert events[0].starts_at is None
+    assert events[0].ends_at is None
 
 
 @pytest.mark.asyncio
