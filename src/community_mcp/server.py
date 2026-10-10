@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 from uuid import UUID
 
 from mcp.server import MCPServer
@@ -44,8 +45,25 @@ from community_mcp.schemas.event import EventDetail
 def create_mcp_server(
     provider: CommunityDataProvider | None = None,
     assistance_provider: AssistanceContextProvider | None = None,
+    *,
+    capability_mode: Literal["public", "demo"] | None = None,
 ) -> MCPServer:
     settings = get_settings()
+    mode = capability_mode or settings.mcp_capability_mode
+
+    if settings.app_env == "production":
+        if mode != "public":
+            raise ValueError("Production MCP server must use public capability mode.")
+
+        if settings.data_provider != "gotihub":
+            raise ValueError("Production MCP server requires DATA_PROVIDER=gotihub.")
+
+        if settings.demo_ledger_enabled:
+            raise ValueError("Production MCP server cannot enable the demo ledger.")
+
+    if mode == "demo" and settings.data_provider != "demo":
+        raise ValueError("Demo MCP actions require DATA_PROVIDER=demo.")
+
     data_provider = provider or create_provider(settings)
     resolved_assistance_provider = assistance_provider or create_assistance_provider(settings)
 
@@ -111,7 +129,6 @@ def create_mcp_server(
         except AssistanceUnavailableError as exc:
             raise ValueError(f"Assistance request '{public_reference}' is not available.") from exc
 
-    @mcp.tool()
     async def prepare_assistance_response(
         public_reference: str,
         actor_id: str,
@@ -125,7 +142,7 @@ def create_mcp_server(
 
         Args:
             public_reference: Public assistance request reference.
-            actor_id: Authenticated actor identifier supplied by the caller.
+            actor_id: Synthetic demo actor identifier supplied by the caller.
             action: Assistance action the actor intends to perform.
         """
         if settings.data_provider != "demo":
@@ -153,7 +170,6 @@ def create_mcp_server(
 
         return prepared
 
-    @mcp.tool()
     async def confirm_assistance_response(
         preparation_id: UUID,
         actor_id: str,
@@ -167,7 +183,7 @@ def create_mcp_server(
 
         Args:
             preparation_id: Identifier returned by prepare_assistance_response.
-            actor_id: Authenticated actor identifier supplied by the caller.
+            actor_id: Synthetic demo actor identifier supplied by the caller.
             confirmed: Explicit confirmation of the prepared action.
         """
         if settings.data_provider != "demo":
@@ -188,6 +204,10 @@ def create_mcp_server(
             raise ValueError("Explicit confirmation is required.") from exc
         except ActorMismatchError as exc:
             raise ValueError("The confirming actor does not match the prepared response.") from exc
+
+    if mode == "demo":
+        mcp.tool()(prepare_assistance_response)
+        mcp.tool()(confirm_assistance_response)
 
     return mcp
 

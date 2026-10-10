@@ -7,7 +7,10 @@ from community_mcp.server import create_mcp_server
 
 @pytest.mark.asyncio
 async def test_mcp_prepares_response_but_requires_confirmation() -> None:
-    mcp = create_mcp_server(DemoProvider())
+    mcp = create_mcp_server(
+        DemoProvider(),
+        capability_mode="demo",
+    )
 
     async with Client(mcp, raise_exceptions=True) as client:
         result = await client.call_tool(
@@ -34,8 +37,10 @@ async def test_mcp_prepares_response_but_requires_confirmation() -> None:
 
 @pytest.mark.asyncio
 async def test_mcp_denies_response_without_actor_identity() -> None:
-    mcp = create_mcp_server(DemoProvider())
-
+    mcp = create_mcp_server(
+        DemoProvider(),
+        capability_mode="demo",
+    )
     async with Client(mcp, raise_exceptions=True) as client:
         result = await client.call_tool(
             "prepare_assistance_response",
