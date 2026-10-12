@@ -82,7 +82,7 @@ def create_mcp_server(
             issuer_url=issuer,
             resource_server_url=audience,
             required_scopes=[settings.mcp_auth_required_scope],
-            validate_token_resource=True,
+            validate_token_resource=False,
         )
     if settings.app_env == "production":
         if mode != "public":
