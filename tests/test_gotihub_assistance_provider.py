@@ -259,3 +259,36 @@ async def test_financial_support_has_deterministic_contribute_action() -> None:
         AssistanceAction.VOLUNTEER,
         AssistanceAction.SHARE,
     ]
+
+
+@pytest.mark.asyncio
+async def test_service_token_sent_to_protected_assistance_endpoint() -> None:
+    from community_mcp.providers.assistance import (
+        AssistanceContextNotFoundError,
+    )
+
+    requests_seen = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests_seen.append(request)
+        return httpx.Response(200, json={"items": []})
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        base_url="https://community.example.org",
+    ) as client:
+        provider = GotiHubAssistanceProvider(
+            "https://community.example.org",
+            organization_slug="test-school",
+            service_token="synthetic-test-token",
+            client=client,
+        )
+
+        with pytest.raises(AssistanceContextNotFoundError):
+            await provider.get_public_context("missing-reference")
+
+    assert len(requests_seen) == 1
+    assert requests_seen[0].url.path == (
+        "/api/v1/integrations/community/organizations/test-school/assistance"
+    )
+    assert requests_seen[0].headers["Authorization"] == ("Bearer synthetic-test-token")

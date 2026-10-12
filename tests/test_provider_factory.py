@@ -15,8 +15,11 @@ def test_factory_creates_demo_provider() -> None:
 def test_factory_creates_gotihub_provider() -> None:
     provider = create_provider(
         Settings(
+            _env_file=None,
             data_provider="gotihub",
             gotihub_base_url="https://community.example.org",
+            gotihub_organization_slug="test-school",
+            gotihub_service_token="synthetic-test-token",
         )
     )
 
@@ -41,3 +44,27 @@ def test_settings_accepts_blank_optional_gotihub_base_url(
     settings = Settings(_env_file=None)
 
     assert settings.gotihub_base_url is None
+
+
+@pytest.mark.parametrize(
+    ("organization_slug", "service_token"),
+    [
+        (None, "synthetic-test-token"),
+        ("test-school", None),
+        ("test-school", ""),
+    ],
+)
+def test_gotihub_factory_rejects_missing_service_credentials(
+    organization_slug: str | None,
+    service_token: str | None,
+) -> None:
+    with pytest.raises(ValueError, match="GOTIHUB_ORGANIZATION_SLUG"):
+        create_provider(
+            Settings(
+                _env_file=None,
+                data_provider="gotihub",
+                gotihub_base_url="https://community.example.org",
+                gotihub_organization_slug=organization_slug,
+                gotihub_service_token=service_token,
+            )
+        )

@@ -29,6 +29,8 @@ class Settings(BaseSettings):
 
     data_provider: Literal["demo", "gotihub"] = "demo"
     gotihub_base_url: OptionalHttpUrl = None
+    gotihub_organization_slug: str | None = None
+    gotihub_service_token: str | None = None
 
     reasoning_provider: Literal["deterministic", "bedrock"] = "deterministic"
 
@@ -36,8 +38,19 @@ class Settings(BaseSettings):
     bedrock_region: str = "us-east-1"
     bedrock_model_id: str = "amazon.nova-micro-v1:0"
 
+    mcp_capability_mode: Literal["public", "demo"] = "public"
+
     demo_ledger_enabled: bool = False
     demo_ledger_path: str = ".local/demo-assistance.sqlite3"
+
+    mcp_auth_enabled: bool = False
+    mcp_auth_issuer_url: OptionalHttpUrl = None
+    mcp_auth_audience: str | None = None
+    mcp_auth_jwks_url: OptionalHttpUrl = None
+    mcp_auth_required_scope: str = "community.read"
+
+    mcp_allowed_hosts: str = "127.0.0.1:8000,localhost:8000"
+    mcp_allowed_origins: str = "http://127.0.0.1:8000,http://localhost:8000"
 
 
 @lru_cache

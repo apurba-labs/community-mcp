@@ -7,7 +7,10 @@ from community_mcp.server import create_mcp_server
 
 @pytest.mark.asyncio
 async def test_assistance_response_requires_prepare_then_confirm() -> None:
-    mcp = create_mcp_server(DemoProvider())
+    mcp = create_mcp_server(
+        DemoProvider(),
+        capability_mode="demo",
+    )
 
     async with Client(mcp, raise_exceptions=True) as client:
         prepared_result = await client.call_tool(
@@ -47,7 +50,10 @@ async def test_assistance_response_requires_prepare_then_confirm() -> None:
 
 @pytest.mark.asyncio
 async def test_mcp_rejects_replay_of_confirmed_response() -> None:
-    mcp = create_mcp_server(DemoProvider())
+    mcp = create_mcp_server(
+        DemoProvider(),
+        capability_mode="demo",
+    )
 
     async with Client(mcp) as client:
         prepared_result = await client.call_tool(

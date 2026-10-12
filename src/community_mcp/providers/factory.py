@@ -11,4 +11,14 @@ def create_provider(settings: Settings) -> CommunityDataProvider:
     if settings.gotihub_base_url is None:
         raise ValueError("GOTIHUB_BASE_URL is required when DATA_PROVIDER=gotihub")
 
-    return GotiHubProvider(str(settings.gotihub_base_url))
+    if not settings.gotihub_organization_slug or not settings.gotihub_service_token:
+        raise ValueError(
+            "GOTIHUB_ORGANIZATION_SLUG and GOTIHUB_SERVICE_TOKEN "
+            "are required when DATA_PROVIDER=gotihub"
+        )
+
+    return GotiHubProvider(
+        str(settings.gotihub_base_url),
+        organization_slug=settings.gotihub_organization_slug,
+        service_token=settings.gotihub_service_token,
+    )

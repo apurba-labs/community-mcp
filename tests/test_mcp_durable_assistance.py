@@ -26,8 +26,10 @@ async def test_mcp_confirmation_survives_server_restart(
         lambda: settings,
     )
 
-    first_server = create_mcp_server(DemoProvider())
-
+    first_server = create_mcp_server(
+        DemoProvider(),
+        capability_mode="demo",
+    )
     async with Client(first_server, raise_exceptions=True) as client:
         prepared_result = await client.call_tool(
             "prepare_assistance_response",
@@ -40,8 +42,10 @@ async def test_mcp_confirmation_survives_server_restart(
 
     preparation_id = prepared_result.structured_content["preparation_id"]
 
-    restarted_server = create_mcp_server(DemoProvider())
-
+    restarted_server = create_mcp_server(
+        DemoProvider(),
+        capability_mode="demo",
+    )
     async with Client(restarted_server, raise_exceptions=True) as client:
         confirmed_result = await client.call_tool(
             "confirm_assistance_response",
@@ -57,8 +61,10 @@ async def test_mcp_confirmation_survives_server_restart(
         preparation_id
     )
 
-    another_server = create_mcp_server(DemoProvider())
-
+    another_server = create_mcp_server(
+        DemoProvider(),
+        capability_mode="demo",
+    )
     async with Client(another_server, raise_exceptions=False) as client:
         replay = await client.call_tool(
             "confirm_assistance_response",

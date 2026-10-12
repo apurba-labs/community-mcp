@@ -17,25 +17,48 @@ class GotiHubProvider(CommunityDataProvider):
         base_url: str,
         *,
         client: httpx.AsyncClient | None = None,
+        organization_slug: str | None = None,
+        service_token: str | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._client = client
+        self._organization_slug = organization_slug
+        self._service_token = service_token
 
-    async def _get(self, path: str) -> httpx.Response:
+    async def _get(
+        self,
+        path: str,
+        *,
+        authenticated: bool = False,
+    ) -> httpx.Response:
+        headers = {}
+
+        if authenticated:
+            if not self._service_token:
+                raise CommunityProviderError("Community service credentials are unavailable")
+
+            headers["Authorization"] = f"Bearer {self._service_token}"
+
         try:
             if self._client is not None:
-                return await self._client.get(path)
+                return await self._client.get(path, headers=headers)
 
             async with httpx.AsyncClient(
                 base_url=self._base_url,
                 timeout=10.0,
             ) as client:
-                return await client.get(path)
+                return await client.get(path, headers=headers)
         except httpx.HTTPError as exc:
             raise CommunityProviderError("Unable to reach community platform") from exc
 
     async def list_events(self) -> list[EventSummary]:
-        response = await self._get("/api/v1/events")
+        if self._organization_slug:
+            response = await self._get(
+                f"/api/v1/integrations/community/organizations/{self._organization_slug}/events",
+                authenticated=True,
+            )
+        else:
+            response = await self._get("/api/v1/events")
 
         if response.is_error:
             raise CommunityProviderError(f"Community platform returned HTTP {response.status_code}")

@@ -1,7 +1,11 @@
+import os
 from pathlib import Path
+from typing import Literal
 from uuid import UUID
 
 from mcp.server import MCPServer
+from mcp.server.auth.settings import AuthSettings
+from mcp.server.transport_security import TransportSecuritySettings
 
 from community_mcp.assistance.action_service import (
     ActorMismatchError,
@@ -19,6 +23,7 @@ from community_mcp.assistance.service import (
     AssistanceUnavailableError,
 )
 from community_mcp.assistance.sqlite_store import SQLiteAssistanceStore
+from community_mcp.auth.verifier import JWTTokenVerifier
 from community_mcp.config import get_settings
 from community_mcp.policy.assistance import AssistancePolicy
 from community_mcp.providers.assistance import AssistanceContextProvider
@@ -44,8 +49,57 @@ from community_mcp.schemas.event import EventDetail
 def create_mcp_server(
     provider: CommunityDataProvider | None = None,
     assistance_provider: AssistanceContextProvider | None = None,
+    *,
+    capability_mode: Literal["public", "demo"] | None = None,
 ) -> MCPServer:
     settings = get_settings()
+    mode = capability_mode or settings.mcp_capability_mode
+
+    auth_settings = None
+    token_verifier = None
+
+    if settings.mcp_auth_enabled:
+        if not all(
+            (
+                settings.mcp_auth_issuer_url,
+                settings.mcp_auth_audience,
+                settings.mcp_auth_jwks_url,
+            )
+        ):
+            raise ValueError("MCP authentication requires issuer URL, audience and JWKS URL.")
+
+        issuer = str(settings.mcp_auth_issuer_url).rstrip("/")
+        audience = settings.mcp_auth_audience
+        jwks_url = str(settings.mcp_auth_jwks_url)
+
+        token_verifier = JWTTokenVerifier(
+            issuer=issuer,
+            audience=audience,
+            jwks_url=jwks_url,
+        )
+
+        auth_settings = AuthSettings(
+            issuer_url=issuer,
+            resource_server_url=audience,
+            required_scopes=[settings.mcp_auth_required_scope],
+            validate_token_resource=True,
+        )
+    if settings.app_env == "production":
+        if mode != "public":
+            raise ValueError("Production MCP server must use public capability mode.")
+
+        if settings.data_provider != "gotihub":
+            raise ValueError("Production MCP server requires DATA_PROVIDER=gotihub.")
+
+        if settings.demo_ledger_enabled:
+            raise ValueError("Production MCP server cannot enable the demo ledger.")
+
+        if not settings.mcp_auth_enabled:
+            raise ValueError("Production MCP server requires inbound authentication.")
+
+    if mode == "demo" and settings.data_provider != "demo":
+        raise ValueError("Demo MCP actions require DATA_PROVIDER=demo.")
+
     data_provider = provider or create_provider(settings)
     resolved_assistance_provider = assistance_provider or create_assistance_provider(settings)
 
@@ -70,6 +124,8 @@ def create_mcp_server(
 
     mcp = MCPServer(
         "Community MCP",
+        token_verifier=token_verifier,
+        auth=auth_settings,
         instructions=(
             "Use Community MCP for authoritative community information and "
             "permissioned community actions. Do not invent institutional facts "
@@ -111,7 +167,6 @@ def create_mcp_server(
         except AssistanceUnavailableError as exc:
             raise ValueError(f"Assistance request '{public_reference}' is not available.") from exc
 
-    @mcp.tool()
     async def prepare_assistance_response(
         public_reference: str,
         actor_id: str,
@@ -125,7 +180,7 @@ def create_mcp_server(
 
         Args:
             public_reference: Public assistance request reference.
-            actor_id: Authenticated actor identifier supplied by the caller.
+            actor_id: Synthetic demo actor identifier supplied by the caller.
             action: Assistance action the actor intends to perform.
         """
         if settings.data_provider != "demo":
@@ -153,7 +208,6 @@ def create_mcp_server(
 
         return prepared
 
-    @mcp.tool()
     async def confirm_assistance_response(
         preparation_id: UUID,
         actor_id: str,
@@ -167,7 +221,7 @@ def create_mcp_server(
 
         Args:
             preparation_id: Identifier returned by prepare_assistance_response.
-            actor_id: Authenticated actor identifier supplied by the caller.
+            actor_id: Synthetic demo actor identifier supplied by the caller.
             confirmed: Explicit confirmation of the prepared action.
         """
         if settings.data_provider != "demo":
@@ -189,6 +243,10 @@ def create_mcp_server(
         except ActorMismatchError as exc:
             raise ValueError("The confirming actor does not match the prepared response.") from exc
 
+    if mode == "demo":
+        mcp.tool()(prepare_assistance_response)
+        mcp.tool()(confirm_assistance_response)
+
     return mcp
 
 
@@ -198,5 +256,20 @@ mcp = create_mcp_server()
 if __name__ == "__main__":
     mcp.run(
         transport="streamable-http",
+        host=os.getenv("MCP_HOST", "127.0.0.1"),
+        port=int(os.getenv("MCP_PORT", "8000")),
         json_response=True,
+        transport_security=TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=[
+                value.strip()
+                for value in get_settings().mcp_allowed_hosts.split(",")
+                if value.strip()
+            ],
+            allowed_origins=[
+                value.strip()
+                for value in get_settings().mcp_allowed_origins.split(",")
+                if value.strip()
+            ],
+        ),
     )

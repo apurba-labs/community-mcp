@@ -7,7 +7,10 @@ from community_mcp.server import create_mcp_server
 
 @pytest.mark.asyncio
 async def test_assistance_context_is_exposed_through_mcp() -> None:
-    mcp = create_mcp_server(DemoProvider())
+    mcp = create_mcp_server(
+        DemoProvider(),
+        capability_mode="demo",
+    )
 
     async with Client(mcp, raise_exceptions=True) as client:
         tools = await client.list_tools()
@@ -38,7 +41,10 @@ async def test_assistance_context_is_exposed_through_mcp() -> None:
 
 @pytest.mark.asyncio
 async def test_unknown_assistance_is_mcp_tool_error() -> None:
-    mcp = create_mcp_server(DemoProvider())
+    mcp = create_mcp_server(
+        DemoProvider(),
+        capability_mode="demo",
+    )
 
     async with Client(mcp) as client:
         result = await client.call_tool(
