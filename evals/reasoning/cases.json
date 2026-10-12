@@ -1,0 +1,352 @@
+[
+  {
+    "id": "en-event-001",
+    "locale": "en",
+    "message": "What is happening at the centenary celebration?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "en-event-002",
+    "locale": "en",
+    "message": "I'll reach school after lunch on Saturday. What parts of the celebration can I attend?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "bn-event-001",
+    "locale": "bn",
+    "message": "শনিবার স্কুলে আসব। বিকেলে কী কী অনুষ্ঠান আছে?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "bn-event-002",
+    "locale": "bn",
+    "message": "শতবর্ষ অনুষ্ঠানের সময়সূচি কী?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+
+  {
+    "id": "en-assistance-context-001",
+    "locale": "en",
+    "message": "Does anyone need blood?",
+    "expected_intent": "ASSISTANCE_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "en-assistance-context-002",
+    "locale": "en",
+    "message": "Is there an urgent blood request in the community?",
+    "expected_intent": "ASSISTANCE_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "bn-assistance-context-001",
+    "locale": "bn",
+    "message": "কোনো জরুরি রক্তের অনুরোধ আছে?",
+    "expected_intent": "ASSISTANCE_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "bn-assistance-context-002",
+    "locale": "bn",
+    "message": "আমাদের কমিউনিটিতে কারও কি রক্ত দরকার?",
+    "expected_intent": "ASSISTANCE_CONTEXT",
+    "expected_action": null
+  },
+
+  {
+    "id": "en-donate-001",
+    "locale": "en",
+    "message": "I can donate blood.",
+    "expected_intent": "ASSISTANCE_RESPONSE",
+    "expected_action": "DONATE_BLOOD"
+  },
+  {
+    "id": "en-donate-002",
+    "locale": "en",
+    "message": "I'm B positive and would be happy to help them.",
+    "expected_intent": "ASSISTANCE_RESPONSE",
+    "expected_action": "DONATE_BLOOD"
+  },
+  {
+    "id": "en-donate-003",
+    "locale": "en",
+    "message": "I heard someone from our community needs blood. I might be able to donate.",
+    "expected_intent": "ASSISTANCE_RESPONSE",
+    "expected_action": "DONATE_BLOOD"
+  },
+  {
+    "id": "bn-donate-001",
+    "locale": "bn",
+    "message": "আমার রক্তের গ্রুপ B+। প্রয়োজন হলে আমি রক্ত দিতে পারি।",
+    "expected_intent": "ASSISTANCE_RESPONSE",
+    "expected_action": "DONATE_BLOOD"
+  },
+  {
+    "id": "bn-donate-002",
+    "locale": "bn",
+    "message": "আমি B+। শুনলাম কারও রক্ত দরকার, আমি কি সাহায্য করতে পারি?",
+    "expected_intent": "ASSISTANCE_RESPONSE",
+    "expected_action": "DONATE_BLOOD"
+  },
+
+  {
+    "id": "en-volunteer-001",
+    "locale": "en",
+    "message": "I can volunteer to help.",
+    "expected_intent": "ASSISTANCE_RESPONSE",
+    "expected_action": "VOLUNTEER"
+  },
+  {
+    "id": "bn-volunteer-001",
+    "locale": "bn",
+    "message": "প্রয়োজনে আমি স্বেচ্ছাসেবক হিসেবে সাহায্য করতে পারি।",
+    "expected_intent": "ASSISTANCE_RESPONSE",
+    "expected_action": "VOLUNTEER"
+  },
+
+  {
+    "id": "en-share-001",
+    "locale": "en",
+    "message": "I can share this request with others.",
+    "expected_intent": "ASSISTANCE_RESPONSE",
+    "expected_action": "SHARE"
+  },
+  {
+    "id": "bn-share-001",
+    "locale": "bn",
+    "message": "আমি অনুরোধটি অন্যদের সাথে শেয়ার করতে পারি।",
+    "expected_intent": "ASSISTANCE_RESPONSE",
+    "expected_action": "SHARE"
+  },
+
+  {
+    "id": "en-confirm-001",
+    "locale": "en",
+    "message": "Yes, confirm it",
+    "expected_intent": "CONFIRM_ACTION",
+    "expected_action": null
+  },
+  {
+    "id": "en-confirm-002",
+    "locale": "en",
+    "message": "I confirm",
+    "expected_intent": "CONFIRM_ACTION",
+    "expected_action": null
+  },
+  {
+    "id": "bn-confirm-001",
+    "locale": "bn",
+    "message": "হ্যাঁ নিশ্চিত করুন",
+    "expected_intent": "CONFIRM_ACTION",
+    "expected_action": null
+  },
+  {
+    "id": "bn-confirm-002",
+    "locale": "bn",
+    "message": "হ্যাঁ, আমি নিশ্চিত করছি",
+    "expected_intent": "CONFIRM_ACTION",
+    "expected_action": null
+  },
+
+  {
+    "id": "en-safe-001",
+    "locale": "en",
+    "message": "yes",
+    "expected_intent": "UNKNOWN",
+    "expected_action": null
+  },
+  {
+    "id": "en-safe-002",
+    "locale": "en",
+    "message": "okay",
+    "expected_intent": "UNKNOWN",
+    "expected_action": null
+  },
+  {
+    "id": "bn-safe-001",
+    "locale": "bn",
+    "message": "হ্যাঁ",
+    "expected_intent": "UNKNOWN",
+    "expected_action": null
+  },
+  {
+    "id": "bn-safe-002",
+    "locale": "bn",
+    "message": "ঠিক আছে",
+    "expected_intent": "UNKNOWN",
+    "expected_action": null
+  },
+  {
+    "id": "en-unknown-001",
+    "locale": "en",
+    "message": "Thank you very much.",
+    "expected_intent": "UNKNOWN",
+    "expected_action": null
+  },
+  {
+    "id": "bn-unknown-001",
+    "locale": "bn",
+    "message": "অনেক ধন্যবাদ।",
+    "expected_intent": "UNKNOWN",
+    "expected_action": null
+  }
+  ,
+  {
+    "id": "en-event-003",
+    "locale": "en",
+    "message": "How many people from my batch have registered for the centenary event?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "bn-event-003",
+    "locale": "bn",
+    "message": "আমার ব্যাচ থেকে কতজন শতবর্ষ অনুষ্ঠানে রেজিস্ট্রেশন করেছে?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "en-event-004",
+    "locale": "en",
+    "message": "Are any of my batchmates attending the celebration?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "bn-event-004",
+    "locale": "bn",
+    "message": "আমার ব্যাচের কেউ কি অনুষ্ঠানে আসছে?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "en-event-005",
+    "locale": "en",
+    "message": "Where do I need to go when I arrive for registration?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "bn-event-005",
+    "locale": "bn",
+    "message": "অনুষ্ঠানে পৌঁছানোর পর রেজিস্ট্রেশনের জন্য কোথায় যেতে হবে?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "en-event-006",
+    "locale": "en",
+    "message": "Who is on the centenary event committee?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "bn-event-006",
+    "locale": "bn",
+    "message": "শতবর্ষ অনুষ্ঠান কমিটিতে কারা আছেন?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "en-event-007",
+    "locale": "en",
+    "message": "Who are the special guests at the celebration?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "bn-event-007",
+    "locale": "bn",
+    "message": "শতবর্ষ অনুষ্ঠানে বিশেষ অতিথি কারা থাকবেন?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "en-event-008",
+    "locale": "en",
+    "message": "What programs are scheduled after lunch?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "bn-event-008",
+    "locale": "bn",
+    "message": "দুপুরের খাবারের পর কী কী অনুষ্ঠান আছে?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "en-event-009",
+    "locale": "en",
+    "message": "What time should I arrive so I don't miss the alumni gathering?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+    "id": "bn-event-009",
+    "locale": "bn",
+    "message": "অ্যালামনাই গ্যাদারিং মিস না করতে আমাকে কখন পৌঁছাতে হবে?",
+    "expected_intent": "EVENT_CONTEXT",
+    "expected_action": null
+  },
+  {
+  "id": "en-community-001",
+  "locale": "en",
+  "message": "How many alumni from my batch have registered?",
+  "expected_intent": "COMMUNITY_CONTEXT",
+  "expected_action": null
+},
+{
+  "id": "bn-community-001",
+  "locale": "bn",
+  "message": "আমার ব্যাচের কতজন অ্যালামনাই রেজিস্ট্রেশন করেছে?",
+  "expected_intent": "COMMUNITY_CONTEXT",
+  "expected_action": null
+},
+{
+  "id": "en-community-002",
+  "locale": "en",
+  "message": "How many people from my batch are registered on the alumni platform?",
+  "expected_intent": "COMMUNITY_CONTEXT",
+  "expected_action": null
+},
+{
+  "id": "bn-community-002",
+  "locale": "bn",
+  "message": "আমার ব্যাচ থেকে কতজন অ্যালামনাই প্ল্যাটফর্মে রেজিস্ট্রেশন করেছে?",
+  "expected_intent": "COMMUNITY_CONTEXT",
+  "expected_action": null
+},
+{
+  "id": "en-community-003",
+  "locale": "en",
+  "message": "How many registered alumni do we have now?",
+  "expected_intent": "COMMUNITY_CONTEXT",
+  "expected_action": null
+},
+{
+  "id": "bn-community-003",
+  "locale": "bn",
+  "message": "এখন আমাদের মোট কতজন রেজিস্টার্ড অ্যালামনাই আছে?",
+  "expected_intent": "COMMUNITY_CONTEXT",
+  "expected_action": null
+},
+{
+  "id": "en-community-004",
+  "locale": "en",
+  "message": "Are many of my batchmates already part of the alumni community?",
+  "expected_intent": "COMMUNITY_CONTEXT",
+  "expected_action": null
+},
+{
+  "id": "bn-community-004",
+  "locale": "bn",
+  "message": "আমার ব্যাচের কতজন এখন অ্যালামনাই কমিউনিটিতে যুক্ত হয়েছে?",
+  "expected_intent": "COMMUNITY_CONTEXT",
+  "expected_action": null
+}
+]

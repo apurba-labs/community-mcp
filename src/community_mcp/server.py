@@ -1,0 +1,275 @@
+import os
+from pathlib import Path
+from typing import Literal
+from uuid import UUID
+
+from mcp.server import MCPServer
+from mcp.server.auth.settings import AuthSettings
+from mcp.server.transport_security import TransportSecuritySettings
+
+from community_mcp.assistance.action_service import (
+    ActorMismatchError,
+    AssistanceActionService,
+    ConfirmationRequiredError,
+)
+from community_mcp.assistance.preparation_store import (
+    AssistancePreparationStore,
+    PreparationAlreadyConsumedError,
+    PreparationNotFoundError,
+)
+from community_mcp.assistance.service import (
+    AssistanceNotFoundError,
+    AssistanceService,
+    AssistanceUnavailableError,
+)
+from community_mcp.assistance.sqlite_store import SQLiteAssistanceStore
+from community_mcp.auth.verifier import JWTTokenVerifier
+from community_mcp.config import get_settings
+from community_mcp.policy.assistance import AssistancePolicy
+from community_mcp.providers.assistance import AssistanceContextProvider
+from community_mcp.providers.assistance_factory import (
+    create_assistance_provider,
+)
+from community_mcp.providers.base import (
+    CommunityDataProvider,
+    EventNotFoundError,
+)
+from community_mcp.providers.factory import create_provider
+from community_mcp.schemas.action import (
+    ConfirmedAssistanceResponse,
+    PreparedAssistanceResponse,
+)
+from community_mcp.schemas.assistance import (
+    AssistanceAction,
+    AssistanceRequest,
+)
+from community_mcp.schemas.event import EventDetail
+
+
+def create_mcp_server(
+    provider: CommunityDataProvider | None = None,
+    assistance_provider: AssistanceContextProvider | None = None,
+    *,
+    capability_mode: Literal["public", "demo"] | None = None,
+) -> MCPServer:
+    settings = get_settings()
+    mode = capability_mode or settings.mcp_capability_mode
+
+    auth_settings = None
+    token_verifier = None
+
+    if settings.mcp_auth_enabled:
+        if not all(
+            (
+                settings.mcp_auth_issuer_url,
+                settings.mcp_auth_audience,
+                settings.mcp_auth_jwks_url,
+            )
+        ):
+            raise ValueError("MCP authentication requires issuer URL, audience and JWKS URL.")
+
+        issuer = str(settings.mcp_auth_issuer_url).rstrip("/")
+        audience = settings.mcp_auth_audience
+        jwks_url = str(settings.mcp_auth_jwks_url)
+
+        token_verifier = JWTTokenVerifier(
+            issuer=issuer,
+            audience=audience,
+            jwks_url=jwks_url,
+        )
+
+        auth_settings = AuthSettings(
+            issuer_url=issuer,
+            resource_server_url=audience,
+            required_scopes=[settings.mcp_auth_required_scope],
+            validate_token_resource=True,
+        )
+    if settings.app_env == "production":
+        if mode != "public":
+            raise ValueError("Production MCP server must use public capability mode.")
+
+        if settings.data_provider != "gotihub":
+            raise ValueError("Production MCP server requires DATA_PROVIDER=gotihub.")
+
+        if settings.demo_ledger_enabled:
+            raise ValueError("Production MCP server cannot enable the demo ledger.")
+
+        if not settings.mcp_auth_enabled:
+            raise ValueError("Production MCP server requires inbound authentication.")
+
+    if mode == "demo" and settings.data_provider != "demo":
+        raise ValueError("Demo MCP actions require DATA_PROVIDER=demo.")
+
+    data_provider = provider or create_provider(settings)
+    resolved_assistance_provider = assistance_provider or create_assistance_provider(settings)
+
+    assistance_service = AssistanceService(resolved_assistance_provider)
+    assistance_policy = AssistancePolicy()
+    preparation_store = AssistancePreparationStore()
+
+    durable_store = None
+
+    if settings.demo_ledger_enabled:
+        if settings.data_provider != "demo":
+            raise ValueError("Durable demo assistance ledger requires DATA_PROVIDER=demo.")
+
+        ledger_path = Path(settings.demo_ledger_path)
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        durable_store = SQLiteAssistanceStore(ledger_path)
+
+    assistance_action_service = AssistanceActionService(
+        preparation_store,
+        durable_store=durable_store,
+    )
+
+    mcp = MCPServer(
+        "Community MCP",
+        token_verifier=token_verifier,
+        auth=auth_settings,
+        instructions=(
+            "Use Community MCP for authoritative community information and "
+            "permissioned community actions. Do not invent institutional facts "
+            "when a Community MCP capability can provide them."
+        ),
+    )
+
+    @mcp.tool()
+    async def get_event_context(event_slug: str) -> EventDetail:
+        """Get authoritative public context for a community event.
+
+        Use this when reasoning about an event's schedule, program, venue,
+        registration requirements, guests, sponsors, or event team.
+
+        Args:
+            event_slug: Stable public slug identifying the event.
+        """
+        try:
+            return await data_provider.get_event_by_slug(event_slug)
+        except EventNotFoundError as exc:
+            raise ValueError(f"No public event was found with slug '{event_slug}'.") from exc
+
+    @mcp.tool()
+    async def get_assistance_context(
+        public_reference: str,
+    ) -> AssistanceRequest:
+        """Get safe public context for a verified community assistance request.
+
+        Use this before reasoning about how someone may help with a community
+        assistance need. This capability is read-only and performs no action.
+
+        Args:
+            public_reference: Public reference identifying the assistance request.
+        """
+        try:
+            return await assistance_service.get_public_context(public_reference)
+        except AssistanceNotFoundError as exc:
+            raise ValueError(f"No assistance request was found for '{public_reference}'.") from exc
+        except AssistanceUnavailableError as exc:
+            raise ValueError(f"Assistance request '{public_reference}' is not available.") from exc
+
+    async def prepare_assistance_response(
+        public_reference: str,
+        actor_id: str,
+        action: AssistanceAction,
+    ) -> PreparedAssistanceResponse:
+        """Prepare a community assistance response for user confirmation.
+
+        This capability evaluates deterministic policy and prepares an
+        intended response. It does not record, send, notify, or execute
+        the response.
+
+        Args:
+            public_reference: Public assistance request reference.
+            actor_id: Synthetic demo actor identifier supplied by the caller.
+            action: Assistance action the actor intends to perform.
+        """
+        if settings.data_provider != "demo":
+            raise ValueError(
+                "Assistance response actions are disabled outside synthetic demo mode."
+            )
+        try:
+            request = await assistance_service.get_public_context(public_reference)
+        except AssistanceNotFoundError as exc:
+            raise ValueError(f"No assistance request was found for '{public_reference}'.") from exc
+        except AssistanceUnavailableError as exc:
+            raise ValueError(f"Assistance request '{public_reference}' is not available.") from exc
+
+        prepared = assistance_policy.prepare_response(
+            request,
+            actor_id=actor_id,
+            action=action,
+        )
+
+        if prepared.confirmation_required:
+            if durable_store is not None:
+                durable_store.save(prepared)
+            else:
+                preparation_store.save(prepared)
+
+        return prepared
+
+    async def confirm_assistance_response(
+        preparation_id: UUID,
+        actor_id: str,
+        confirmed: bool,
+    ) -> ConfirmedAssistanceResponse:
+        """Confirm and record a previously prepared assistance response.
+
+        This is a consequential capability. It succeeds only for a preparation
+        previously issued by the policy engine, for the same actor, after
+        explicit confirmation. A preparation can be consumed only once.
+
+        Args:
+            preparation_id: Identifier returned by prepare_assistance_response.
+            actor_id: Synthetic demo actor identifier supplied by the caller.
+            confirmed: Explicit confirmation of the prepared action.
+        """
+        if settings.data_provider != "demo":
+            raise ValueError(
+                "Assistance response actions are disabled outside synthetic demo mode."
+            )
+        try:
+            return assistance_action_service.confirm_response(
+                preparation_id,
+                actor_id=actor_id,
+                confirmed=confirmed,
+            )
+        except PreparationNotFoundError as exc:
+            raise ValueError("The prepared assistance response does not exist.") from exc
+        except PreparationAlreadyConsumedError as exc:
+            raise ValueError("The prepared assistance response has already been used.") from exc
+        except ConfirmationRequiredError as exc:
+            raise ValueError("Explicit confirmation is required.") from exc
+        except ActorMismatchError as exc:
+            raise ValueError("The confirming actor does not match the prepared response.") from exc
+
+    if mode == "demo":
+        mcp.tool()(prepare_assistance_response)
+        mcp.tool()(confirm_assistance_response)
+
+    return mcp
+
+
+mcp = create_mcp_server()
+
+
+if __name__ == "__main__":
+    mcp.run(
+        transport="streamable-http",
+        host=os.getenv("MCP_HOST", "127.0.0.1"),
+        port=int(os.getenv("MCP_PORT", "8000")),
+        json_response=True,
+        transport_security=TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=[
+                value.strip()
+                for value in get_settings().mcp_allowed_hosts.split(",")
+                if value.strip()
+            ],
+            allowed_origins=[
+                value.strip()
+                for value in get_settings().mcp_allowed_origins.split(",")
+                if value.strip()
+            ],
+        ),
+    )
