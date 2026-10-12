@@ -43,6 +43,15 @@ class Settings(BaseSettings):
     demo_ledger_enabled: bool = False
     demo_ledger_path: str = ".local/demo-assistance.sqlite3"
 
+    mcp_auth_enabled: bool = False
+    mcp_auth_issuer_url: OptionalHttpUrl = None
+    mcp_auth_audience: str | None = None
+    mcp_auth_jwks_url: OptionalHttpUrl = None
+    mcp_auth_required_scope: str = "community.read"
+
+    mcp_allowed_hosts: str = "127.0.0.1:8000,localhost:8000"
+    mcp_allowed_origins: str = "http://127.0.0.1:8000,http://localhost:8000"
+
 
 @lru_cache
 def get_settings() -> Settings:

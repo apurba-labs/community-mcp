@@ -1,8 +1,11 @@
+import os
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
 
 from mcp.server import MCPServer
+from mcp.server.auth.settings import AuthSettings
+from mcp.server.transport_security import TransportSecuritySettings
 
 from community_mcp.assistance.action_service import (
     ActorMismatchError,
@@ -20,6 +23,7 @@ from community_mcp.assistance.service import (
     AssistanceUnavailableError,
 )
 from community_mcp.assistance.sqlite_store import SQLiteAssistanceStore
+from community_mcp.auth.verifier import JWTTokenVerifier
 from community_mcp.config import get_settings
 from community_mcp.policy.assistance import AssistancePolicy
 from community_mcp.providers.assistance import AssistanceContextProvider
@@ -51,6 +55,35 @@ def create_mcp_server(
     settings = get_settings()
     mode = capability_mode or settings.mcp_capability_mode
 
+    auth_settings = None
+    token_verifier = None
+
+    if settings.mcp_auth_enabled:
+        if not all(
+            (
+                settings.mcp_auth_issuer_url,
+                settings.mcp_auth_audience,
+                settings.mcp_auth_jwks_url,
+            )
+        ):
+            raise ValueError("MCP authentication requires issuer URL, audience and JWKS URL.")
+
+        issuer = str(settings.mcp_auth_issuer_url).rstrip("/")
+        audience = settings.mcp_auth_audience
+        jwks_url = str(settings.mcp_auth_jwks_url)
+
+        token_verifier = JWTTokenVerifier(
+            issuer=issuer,
+            audience=audience,
+            jwks_url=jwks_url,
+        )
+
+        auth_settings = AuthSettings(
+            issuer_url=issuer,
+            resource_server_url=audience,
+            required_scopes=[settings.mcp_auth_required_scope],
+            validate_token_resource=True,
+        )
     if settings.app_env == "production":
         if mode != "public":
             raise ValueError("Production MCP server must use public capability mode.")
@@ -60,6 +93,9 @@ def create_mcp_server(
 
         if settings.demo_ledger_enabled:
             raise ValueError("Production MCP server cannot enable the demo ledger.")
+
+        if not settings.mcp_auth_enabled:
+            raise ValueError("Production MCP server requires inbound authentication.")
 
     if mode == "demo" and settings.data_provider != "demo":
         raise ValueError("Demo MCP actions require DATA_PROVIDER=demo.")
@@ -88,6 +124,8 @@ def create_mcp_server(
 
     mcp = MCPServer(
         "Community MCP",
+        token_verifier=token_verifier,
+        auth=auth_settings,
         instructions=(
             "Use Community MCP for authoritative community information and "
             "permissioned community actions. Do not invent institutional facts "
@@ -218,5 +256,20 @@ mcp = create_mcp_server()
 if __name__ == "__main__":
     mcp.run(
         transport="streamable-http",
+        host=os.getenv("MCP_HOST", "127.0.0.1"),
+        port=int(os.getenv("MCP_PORT", "8000")),
         json_response=True,
+        transport_security=TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=[
+                value.strip()
+                for value in get_settings().mcp_allowed_hosts.split(",")
+                if value.strip()
+            ],
+            allowed_origins=[
+                value.strip()
+                for value in get_settings().mcp_allowed_origins.split(",")
+                if value.strip()
+            ],
+        ),
     )
