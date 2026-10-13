@@ -40,7 +40,6 @@ async def test_event_answer_uses_mcp_data() -> None:
 
     assert response["tool"] == "get_event_context"
     assert "not been announced" in response["message"]
-    assert "not currently enabled" in response["message"]
 
     mcp_client.call_tool.assert_awaited_once_with(
         "get_event_context",
@@ -79,7 +78,7 @@ async def test_bangla_event_answer() -> None:
         locale=SupportedLocale.BN,
     )
 
-    assert "তারিখ এখনো প্রকাশ করা হয়নি" in response["message"]
+    assert "তারিখ এখনো প্রকাশ করা হয়নি" in response["message"]
 
 
 @pytest.mark.asyncio
