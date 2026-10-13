@@ -23,6 +23,11 @@ def test_bootstrap_creates_fastapi_app(monkeypatch):
         "test-token",
     )
 
+    monkeypatch.setenv(
+        "SIMULATOR_INTERNAL_API_TOKEN",
+        "test-alumni-service-token",
+    )
+
     with (
         patch("community_mcp.simulator.bootstrap.BedrockReasoner") as reasoner_class,
         patch("community_mcp.simulator.bootstrap.CommunityMCPClient") as client_class,
@@ -38,3 +43,45 @@ def test_bootstrap_creates_fastapi_app(monkeypatch):
         server_url="https://mcp.example.com/mcp",
         access_token="test-token",
     )
+
+
+@pytest.mark.asyncio
+async def test_bootstrap_configures_internal_authentication(monkeypatch):
+    import httpx
+
+    monkeypatch.setenv(
+        "SIMULATOR_MCP_URL",
+        "https://mcp.example.com/mcp",
+    )
+    monkeypatch.setenv(
+        "SIMULATOR_MCP_ACCESS_TOKEN",
+        "test-mcp-token",
+    )
+    monkeypatch.setenv(
+        "SIMULATOR_INTERNAL_API_TOKEN",
+        "test-alumni-service-token",
+    )
+
+    with (
+        patch("community_mcp.simulator.bootstrap.BedrockReasoner"),
+        patch("community_mcp.simulator.bootstrap.CommunityMCPClient"),
+    ):
+        app = create_app()
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        missing = await client.post(
+            "/simulator/api/internal/chat",
+            json={"message": "Hello"},
+        )
+
+        invalid = await client.post(
+            "/simulator/api/internal/chat",
+            headers={"Authorization": "Bearer incorrect"},
+            json={"message": "Hello"},
+        )
+
+    assert missing.status_code == 401
+    assert invalid.status_code == 401

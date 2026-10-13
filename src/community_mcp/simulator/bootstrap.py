@@ -14,6 +14,7 @@ def create_app():
 
     mcp_url = os.environ.get("SIMULATOR_MCP_URL")
     mcp_token = os.environ.get("SIMULATOR_MCP_ACCESS_TOKEN")
+    internal_api_token = os.environ.get("SIMULATOR_INTERNAL_API_TOKEN")
 
     if not mcp_url:
         raise RuntimeError("SIMULATOR_MCP_URL is required.")
@@ -40,4 +41,5 @@ def create_app():
 
     return create_simulator_app(
         agent_factory=lambda: agent,
+        internal_api_token=internal_api_token,
     )
