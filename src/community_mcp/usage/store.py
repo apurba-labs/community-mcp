@@ -122,7 +122,7 @@ class SQLiteUsageStore:
             """,
             (cutoff.isoformat(),),
         )
-        
+
     def _initialize(self) -> None:
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
