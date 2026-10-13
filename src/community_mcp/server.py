@@ -5,6 +5,7 @@ from uuid import UUID
 
 from mcp.server import MCPServer
 from mcp.server.auth.settings import AuthSettings
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 
 from community_mcp.assistance.action_service import (
@@ -162,10 +163,8 @@ def create_mcp_server(
         """
         try:
             return await assistance_service.get_public_context(public_reference)
-        except AssistanceNotFoundError as exc:
-            raise ValueError(f"No assistance request was found for '{public_reference}'.") from exc
-        except AssistanceUnavailableError as exc:
-            raise ValueError(f"Assistance request '{public_reference}' is not available.") from exc
+        except (AssistanceNotFoundError, AssistanceUnavailableError) as exc:
+            raise ToolError("The requested assistance information is unavailable.") from exc
 
     async def prepare_assistance_response(
         public_reference: str,
