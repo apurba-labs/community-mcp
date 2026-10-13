@@ -6,12 +6,13 @@ from dataclasses import dataclass
 
 @dataclass
 class SimulatorSession:
-    event_slug: str
-    updated_at: float
+    event_slug: str | None = None
+    assistance_reference: str | None = None
+    updated_at: float = 0.0
 
 
 class SimulatorSessionStore:
-    """Temporary event context for the read-only simulator."""
+    """Temporary public conversation context for the read-only simulator."""
 
     def __init__(
         self,
@@ -23,21 +24,26 @@ class SimulatorSessionStore:
         self.max_sessions = max_sessions
         self._sessions: dict[str, SimulatorSession] = {}
 
-    def has_event_context(self, session_id: str) -> bool:
+    def _get(self, session_id: str) -> SimulatorSession | None:
         now = time.monotonic()
         session = self._sessions.get(session_id)
 
         if session is None:
-            return False
+            return None
 
         if now - session.updated_at > self.ttl_seconds:
             del self._sessions[session_id]
-            return False
+            return None
 
         session.updated_at = now
-        return True
+        return session
 
-    def remember_event(self, session_id: str, event_slug: str) -> None:
+    def _remember(self, session_id: str) -> SimulatorSession:
+        existing = self._get(session_id)
+
+        if existing is not None:
+            return existing
+
         now = time.monotonic()
 
         expired = [
@@ -49,14 +55,27 @@ class SimulatorSessionStore:
         for key in expired:
             del self._sessions[key]
 
-        if session_id not in self._sessions and len(self._sessions) >= self.max_sessions:
+        if len(self._sessions) >= self.max_sessions:
             oldest = min(
                 self._sessions,
                 key=lambda key: self._sessions[key].updated_at,
             )
             del self._sessions[oldest]
 
-        self._sessions[session_id] = SimulatorSession(
-            event_slug=event_slug,
-            updated_at=now,
-        )
+        session = SimulatorSession(updated_at=now)
+        self._sessions[session_id] = session
+        return session
+
+    def has_event_context(self, session_id: str) -> bool:
+        session = self._get(session_id)
+        return session is not None and session.event_slug is not None
+
+    def remember_event(self, session_id: str, event_slug: str) -> None:
+        self._remember(session_id).event_slug = event_slug
+
+    def get_assistance_reference(self, session_id: str) -> str | None:
+        session = self._get(session_id)
+        return session.assistance_reference if session else None
+
+    def remember_assistance(self, session_id: str, reference: str) -> None:
+        self._remember(session_id).assistance_reference = reference

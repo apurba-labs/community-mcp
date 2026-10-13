@@ -4,11 +4,16 @@ from typing import Any
 
 from community_mcp.agent.bedrock import BedrockReasoner
 from community_mcp.agent.schemas import AgentIntent, SupportedLocale
+from community_mcp.simulator.assistance import (
+    extract_public_reference,
+    render_assistance_context,
+    render_reference_required,
+)
 from community_mcp.simulator.event_renderer import (
     detect_event_topic,
     render_event_answer,
 )
-from community_mcp.simulator.mcp_client import CommunityMCPClient
+from community_mcp.simulator.mcp_client import CommunityMCPClient, CommunityMCPClientError
 from community_mcp.simulator.session import SimulatorSessionStore
 
 
@@ -41,6 +46,94 @@ class SimulatorAgent:
             message=message,
             locale=locale,
         )
+
+        reference = extract_public_reference(message)
+
+        previous_reference = (
+            self.sessions.get_assistance_reference(session_id) if session_id is not None else None
+        )
+
+        is_assistance = decision.intent == AgentIntent.ASSISTANCE_CONTEXT
+
+        is_assistance_followup = (
+            previous_reference is not None
+            and decision.intent == AgentIntent.UNKNOWN
+            and any(
+                phrase in message.casefold()
+                for phrase in (
+                    "still active",
+                    "still needed",
+                    "that request",
+                    "এই অনুরোধ",
+                    "এখনো প্রয়োজন",
+                    "এখনও প্রয়োজন",
+                    "সক্রিয়",
+                    "সক্রিয়",
+                )
+            )
+        )
+
+        if (
+            is_assistance
+            or (reference is not None and decision.intent == AgentIntent.UNKNOWN)
+            or is_assistance_followup
+        ):
+            reference = reference or previous_reference
+
+            if reference is None:
+                return {
+                    "message": render_reference_required(locale),
+                    "intent": decision.intent.value,
+                    "tool": None,
+                }
+
+            try:
+                result = await self.mcp_client.call_tool(
+                    "get_assistance_context",
+                    {"public_reference": reference},
+                )
+
+                if result.is_error:
+                    raise ValueError("Assistance lookup failed.")
+
+                request = result.structured_content
+
+                if not isinstance(request, dict):
+                    raise ValueError("Invalid assistance context.")
+
+                if (
+                    request.get("public_reference") != reference
+                    or request.get("verified") is not True
+                    or request.get("approved") is not True
+                    or request.get("status") not in {"OPEN", "ACTIVE"}
+                ):
+                    raise ValueError("Assistance request is unavailable.")
+
+                response = render_assistance_context(
+                    request,
+                    locale=locale,
+                )
+
+            except (CommunityMCPClientError, ValueError, RuntimeError):
+                return {
+                    "message": (
+                        "এই রেফারেন্সের অনুমোদিত সহায়তার তথ্য এখন যাচাই করা যাচ্ছে না।"
+                        if locale == SupportedLocale.BN
+                        else "Approved assistance information for \
+                            this reference is currently unavailable."
+                    ),
+                    "intent": decision.intent.value,
+                    "tool": None,
+                }
+
+            if session_id is not None:
+                self.sessions.remember_assistance(session_id, reference)
+
+            return {
+                "message": response,
+                "intent": decision.intent.value,
+                "tool": "get_assistance_context",
+            }
 
         topic = detect_event_topic(message)
         has_context = session_id is not None and self.sessions.has_event_context(session_id)

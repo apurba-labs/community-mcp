@@ -103,3 +103,111 @@ async def test_non_event_intent_does_not_call_mcp() -> None:
 
     assert response["tool"] is None
     mcp_client.call_tool.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_assistance_requires_public_reference() -> None:
+    reasoner = MagicMock()
+    reasoner.reason = AsyncMock(
+        return_value=AgentDecision(
+            intent=AgentIntent.ASSISTANCE_CONTEXT,
+            locale=SupportedLocale.BN,
+        )
+    )
+
+    mcp_client = MagicMock()
+    mcp_client.call_tool = AsyncMock()
+
+    agent = SimulatorAgent(mcp_client=mcp_client, reasoner=reasoner)
+
+    response = await agent.handle(
+        message="কারও রক্তের প্রয়োজন আছে?",
+        locale=SupportedLocale.BN,
+    )
+
+    assert "রেফারেন্স" in response["message"]
+    assert response["tool"] is None
+    mcp_client.call_tool.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_assistance_lookup_and_followup() -> None:
+    reasoner = MagicMock()
+    reasoner.reason = AsyncMock(
+        side_effect=[
+            AgentDecision(
+                intent=AgentIntent.ASSISTANCE_CONTEXT,
+                locale=SupportedLocale.EN,
+            ),
+            AgentDecision(
+                intent=AgentIntent.UNKNOWN,
+                locale=SupportedLocale.EN,
+            ),
+        ]
+    )
+
+    mcp_client = MagicMock()
+    mcp_client.call_tool = AsyncMock(
+        return_value=MagicMock(
+            is_error=False,
+            structured_content={
+                "public_reference": "HELP-2026-001",
+                "assistance_type": "BLOOD",
+                "status": "ACTIVE",
+                "urgency": "URGENT",
+                "summary": "A verified community member needs blood support.",
+                "verified": True,
+                "approved": True,
+                "phone_number": "PRIVATE-PHONE",
+            },
+        )
+    )
+
+    agent = SimulatorAgent(mcp_client=mcp_client, reasoner=reasoner)
+
+    first = await agent.handle(
+        message="Check HELP-2026-001",
+        session_id="session-1",
+    )
+
+    second = await agent.handle(
+        message="Is that request still active?",
+        session_id="session-1",
+    )
+
+    assert first["tool"] == "get_assistance_context"
+    assert second["tool"] == "get_assistance_context"
+    assert "PRIVATE-PHONE" not in first["message"]
+    assert mcp_client.call_tool.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_unapproved_assistance_is_not_rendered() -> None:
+    reasoner = MagicMock()
+    reasoner.reason = AsyncMock(
+        return_value=AgentDecision(
+            intent=AgentIntent.ASSISTANCE_CONTEXT,
+            locale=SupportedLocale.EN,
+        )
+    )
+
+    mcp_client = MagicMock()
+    mcp_client.call_tool = AsyncMock(
+        return_value=MagicMock(
+            is_error=False,
+            structured_content={
+                "public_reference": "HELP-2026-001",
+                "status": "ACTIVE",
+                "verified": True,
+                "approved": False,
+                "summary": "PRIVATE-UNAPPROVED-DATA",
+            },
+        )
+    )
+
+    agent = SimulatorAgent(mcp_client=mcp_client, reasoner=reasoner)
+
+    response = await agent.handle(message="Check HELP-2026-001")
+
+    assert response["tool"] is None
+    assert "PRIVATE-UNAPPROVED-DATA" not in response["message"]

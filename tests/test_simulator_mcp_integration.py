@@ -148,3 +148,47 @@ async def test_simulator_client_rejects_invalid_token(
         ) as exc_info:
             await client.list_tools()
         assert "Sensitive internal connection details" not in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_simulator_client_calls_real_assistance_tool(
+    authenticated_mcp_app,
+):
+    async with running_mcp_server(authenticated_mcp_app) as server_url:
+        client = CommunityMCPClient(
+            server_url=server_url,
+            access_token="valid-test-token",
+        )
+
+        result = await client.call_tool(
+            "get_assistance_context",
+            {"public_reference": "HELP-2026-001"},
+        )
+
+    assert result.is_error is False
+    assert result.structured_content is not None
+
+    assistance = result.structured_content
+
+    assert assistance["public_reference"] == "HELP-2026-001"
+    assert assistance["assistance_type"] == "BLOOD"
+    assert assistance["status"] == "ACTIVE"
+    assert assistance["verified"] is True
+    assert assistance["approved"] is True
+
+
+@pytest.mark.asyncio
+async def test_simulator_client_handles_missing_assistance_reference(
+    authenticated_mcp_app,
+):
+    async with running_mcp_server(authenticated_mcp_app) as server_url:
+        client = CommunityMCPClient(
+            server_url=server_url,
+            access_token="valid-test-token",
+        )
+
+        with pytest.raises(CommunityMCPClientError):
+            await client.call_tool(
+                "get_assistance_context",
+                {"public_reference": "HELP-2026-999"},
+            )
