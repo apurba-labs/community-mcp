@@ -31,6 +31,13 @@ def render_reference_required(locale: SupportedLocale) -> str:
     )
 
 
+def bangla_label(value: object, labels: dict[str, str]) -> str:
+    if not isinstance(value, str):
+        return "প্রকাশিত নয়"
+
+    return labels.get(value.upper(), value)
+
+
 def render_assistance_context(
     request: dict[str, Any],
     *,
@@ -48,11 +55,38 @@ def render_assistance_context(
         raise ValueError("Incomplete public assistance context.")
 
     if locale == SupportedLocale.BN:
+        type_label = bangla_label(
+            assistance_type,
+            {
+                "BLOOD": "রক্ত সহায়তা",
+                "FINANCIAL": "আর্থিক সহায়তা",
+                "GENERAL": "সাধারণ সহায়তা",
+            },
+        )
+
+        status_label = bangla_label(
+            status,
+            {
+                "OPEN": "উন্মুক্ত",
+                "ACTIVE": "সক্রিয়",
+            },
+        )
+
+        urgency_label = bangla_label(
+            urgency,
+            {
+                "URGENT": "জরুরি",
+                "HIGH": "উচ্চ",
+                "NORMAL": "সাধারণ",
+                "LOW": "কম",
+            },
+        )
+
         return (
             f"সহায়তার রেফারেন্স: {reference}\n"
-            f"ধরন: {assistance_type or 'প্রকাশিত নয়'}\n"
-            f"অবস্থা: {status or 'প্রকাশিত নয়'}\n"
-            f"জরুরি মাত্রা: {urgency or 'প্রকাশিত নয়'}\n"
+            f"ধরন: {type_label}\n"
+            f"অবস্থা: {status_label}\n"
+            f"জরুরি মাত্রা: {urgency_label}\n"
             f"বিবরণ: {summary}\n\n"
             "এটি প্রকাশের জন্য অনুমোদিত তথ্য। "
             "ব্যক্তিগত যোগাযোগের তথ্য এখানে দেখানো হয় না।"

@@ -46,3 +46,20 @@ def test_public_assistance_renderer_excludes_private_fields():
     assert "PRIVATE-PHONE-123" not in response
     assert "PRIVATE-NAME-123" not in response
     assert "PRIVATE-NOTES-123" not in response
+
+
+def test_bangla_assistance_labels():
+    response = render_assistance_context(
+        {
+            "public_reference": "HELP-2026-001",
+            "assistance_type": "BLOOD",
+            "status": "ACTIVE",
+            "urgency": "URGENT",
+            "summary": "A verified community member needs blood support.",
+        },
+        locale=SupportedLocale.BN,
+    )
+
+    assert "ধরন: রক্ত সহায়তা" in response
+    assert "অবস্থা: সক্রিয়" in response
+    assert "জরুরি মাত্রা: জরুরি" in response
