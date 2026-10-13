@@ -12,10 +12,7 @@ from mcp.server.auth.provider import AccessToken
 from community_mcp.config import Settings
 from community_mcp.providers.demo import DemoProvider
 from community_mcp.server import create_mcp_server
-from community_mcp.simulator.mcp_client import (
-    CommunityMCPClient,
-    CommunityMCPClientError,
-)
+from community_mcp.simulator.mcp_client import CommunityMCPClient, CommunityMCPClientError
 
 
 @asynccontextmanager
@@ -145,5 +142,9 @@ async def test_simulator_client_rejects_invalid_token(
             access_token="invalid-test-token",
         )
 
-        with pytest.raises(CommunityMCPClientError):
+        with pytest.raises(
+            CommunityMCPClientError,
+            match="Unable to complete",
+        ) as exc_info:
             await client.list_tools()
+        assert "Sensitive internal connection details" not in str(exc_info.value)
