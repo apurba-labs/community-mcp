@@ -1,9 +1,12 @@
 import time
 from collections import defaultdict, deque
 from collections.abc import Callable
+from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
 from community_mcp.agent.schemas import SupportedLocale
@@ -38,6 +41,19 @@ def create_simulator_app(
     rate_limiter: ChatRateLimiter | None = None,
 ) -> FastAPI:
     app = FastAPI(title="Community MCP Experience Simulator")
+
+    static_dir = Path(__file__).resolve().parent / "static"
+
+    app.mount(
+        "/simulator/static",
+        StaticFiles(directory=static_dir),
+        name="simulator-static",
+    )
+
+    @app.get("/simulator", include_in_schema=False)
+    async def simulator_home():
+        return FileResponse(static_dir / "index.html")
+
     limiter = rate_limiter or ChatRateLimiter()
 
     def get_agent() -> Any:
