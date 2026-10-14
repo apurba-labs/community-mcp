@@ -141,19 +141,6 @@ class SQLiteUsageStore:
                 )
                 """
             )
-            connection.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_usage_channel_created
-                ON usage_records (channel, created_at)
-                """
-            )
-            connection.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_usage_organization_created
-                ON usage_records (organization_id, created_at)
-                """
-            )
-
             columns = {
                 row["name"] for row in connection.execute("PRAGMA table_info(usage_records)")
             }
