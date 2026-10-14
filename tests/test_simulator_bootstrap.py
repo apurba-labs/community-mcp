@@ -4,6 +4,7 @@ import pytest
 
 from community_mcp.simulator.bootstrap import create_app
 
+ORGANIZATION_ID = "11111111-1111-4111-8111-111111111111"
 
 def test_bootstrap_requires_mcp_configuration(monkeypatch):
     monkeypatch.delenv("SIMULATOR_MCP_URL", raising=False)
@@ -74,14 +75,19 @@ async def test_bootstrap_configures_internal_authentication(monkeypatch):
     ) as client:
         missing = await client.post(
             "/simulator/api/internal/chat",
-            json={"message": "Hello"},
+            json={
+                "message": "Hello",
+                "organization_id": ORGANIZATION_ID,
+            },
         )
 
         invalid = await client.post(
             "/simulator/api/internal/chat",
             headers={"Authorization": "Bearer incorrect"},
-            json={"message": "Hello"},
+            json={
+                "message": "Hello",
+                "organization_id": ORGANIZATION_ID,
+            },
         )
-
     assert missing.status_code == 401
     assert invalid.status_code == 401

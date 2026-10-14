@@ -1,23 +1,47 @@
+from __future__ import annotations
+
 import secrets
 import time
 from collections import defaultdict, deque
 from collections.abc import Callable
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
 from community_mcp.agent.schemas import SupportedLocale
-from community_mcp.simulator.api_schemas import ChatRequest, ChatResponse, MCPTrace
+from community_mcp.simulator.api_schemas import (
+    ChatRequest,
+    ChatResponse,
+    InternalChatRequest,
+    MCPTrace,
+)
+from community_mcp.usage.context import (
+    UsageContext,
+    activate_usage,
+    reset_usage,
+)
+from community_mcp.usage.store import (
+    SQLiteUsageStore,
+    UsageBudget,
+    UsageBudgetExceeded,
+)
+
+UsageChannel = Literal["public", "alumni"]
 
 
 class ChatRateLimiter:
     """Simple in-memory per-client request limiter for local development."""
 
-    def __init__(self, *, max_requests: int = 10, window_seconds: int = 60):
+    def __init__(
+        self,
+        *,
+        max_requests: int = 10,
+        window_seconds: int = 60,
+    ) -> None:
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self._requests: dict[str, deque[float]] = defaultdict(deque)
@@ -42,6 +66,10 @@ def create_simulator_app(
     rate_limiter: ChatRateLimiter | None = None,
     internal_api_token: str | None = None,
     internal_rate_limiter: ChatRateLimiter | None = None,
+    usage_store: SQLiteUsageStore | None = None,
+    public_budget: UsageBudget | None = None,
+    alumni_budget: UsageBudget | None = None,
+    model_id: str = "amazon.nova-micro-v1:0",
 ) -> FastAPI:
     app = FastAPI(title="Community MCP Experience Simulator")
 
@@ -53,18 +81,93 @@ def create_simulator_app(
         name="simulator-static",
     )
 
-    @app.get("/simulator", include_in_schema=False)
-    async def simulator_home():
-        return FileResponse(static_dir / "index.html")
-
     limiter = rate_limiter or ChatRateLimiter()
+
     internal_limiter = internal_rate_limiter or ChatRateLimiter(
         max_requests=30,
         window_seconds=60,
     )
 
-    def get_agent() -> Any:
-        return agent_factory()
+    async def handle_budgeted_chat(
+        *,
+        agent: Any,
+        payload: ChatRequest,
+        channel: UsageChannel,
+        organization_id: str | None = None,
+    ) -> ChatResponse:
+        """
+        Execute a chat request with persistent usage accounting.
+
+        Each request receives its own reservation and ContextVar scope.
+        No request-specific state is stored on the shared agent.
+        """
+        budget = public_budget if channel == "public" else alumni_budget
+
+        if usage_store is None or budget is None:
+            raise HTTPException(
+                status_code=503,
+                detail="AI usage controls are not configured.",
+            )
+
+        try:
+            reservation_id = usage_store.reserve(
+                channel=channel,
+                organization_id=organization_id,
+                model_id=model_id,
+                budget=budget,
+            )
+        except UsageBudgetExceeded as exc:
+            raise HTTPException(
+                status_code=429,
+                detail=str(exc),
+            ) from exc
+
+        context_token = activate_usage(
+            UsageContext(
+                store=usage_store,
+                reservation_id=reservation_id,
+            )
+        )
+
+        try:
+            result = await agent.handle(
+                message=payload.message,
+                locale=SupportedLocale(payload.locale),
+                session_id=str(payload.session_id),
+            )
+
+            response = ChatResponse(
+                session_id=payload.session_id,
+                message=result["message"],
+                intent=result["intent"],
+                trace=MCPTrace(
+                    tool=result.get("tool"),
+                    authenticated=result.get("tool") is not None,
+                ),
+            )
+
+            return response
+
+        except (ValueError, ValidationError) as exc:
+            raise HTTPException(
+                status_code=422,
+                detail="Invalid conversation request.",
+            ) from exc
+
+        finally:
+            try:
+                # Bedrock's usage callback marks the reservation completed.
+                #
+                # If no usage was recorded, preserve the estimated allocation
+                # rather than incorrectly reporting zero token consumption.
+                if usage_store.reservation_status(reservation_id) == "reserved":
+                    usage_store.mark_unknown(reservation_id)
+            finally:
+                reset_usage(context_token)
+
+    @app.get("/simulator", include_in_schema=False)
+    async def simulator_home():
+        return FileResponse(static_dir / "index.html")
 
     @app.get("/simulator/api/health")
     async def health() -> dict[str, str]:
@@ -74,38 +177,26 @@ def create_simulator_app(
     async def chat(
         payload: ChatRequest,
         request: Request,
-        agent: Annotated[Any, Depends(get_agent)],
     ) -> ChatResponse:
-        # Use the actual TCP peer, not untrusted forwarded headers.
+        # Do not trust caller-supplied X-Forwarded-For headers.
         client_key = request.client.host if request.client else "unknown"
 
         if not limiter.allow(client_key):
-            raise HTTPException(status_code=429, detail="Too many requests.")
-
-        try:
-            result = await agent.handle(
-                message=payload.message,
-                locale=SupportedLocale(payload.locale),
-                session_id=str(payload.session_id),
+            raise HTTPException(
+                status_code=429,
+                detail="Too many requests.",
             )
-        except (ValueError, ValidationError) as exc:
-            raise HTTPException(status_code=422, detail="Invalid conversation request.") from exc
 
-        return ChatResponse(
-            session_id=payload.session_id,
-            message=result["message"],
-            intent=result["intent"],
-            trace=MCPTrace(
-                tool=result.get("tool"),
-                authenticated=result.get("tool") is not None,
-            ),
+        return await handle_budgeted_chat(
+            agent=agent_factory(),
+            payload=payload,
+            channel="public",
         )
 
     @app.post("/simulator/api/internal/chat", response_model=ChatResponse)
     async def internal_chat(
-        payload: ChatRequest,
+        payload: InternalChatRequest,
         request: Request,
-        agent: Annotated[Any, Depends(get_agent)],
         authorization: Annotated[str | None, Header()] = None,
     ) -> ChatResponse:
         if not internal_api_token:
@@ -126,8 +217,10 @@ def create_simulator_app(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # Never accept a channel name from the browser.
-        # This endpoint is reserved for the Alumni backend.
+        # This endpoint is reserved for the authenticated Alumni backend.
+        # The organization UUID must come from its resolved organization
+        # context, never from an end-user-controlled channel selector.
+
         client_key = "alumni"
 
         if not internal_limiter.allow(client_key):
@@ -136,26 +229,11 @@ def create_simulator_app(
                 detail="Alumni assistant request limit exceeded.",
             )
 
-        try:
-            result = await agent.handle(
-                message=payload.message,
-                locale=SupportedLocale(payload.locale),
-                session_id=str(payload.session_id),
-            )
-        except (ValueError, ValidationError) as exc:
-            raise HTTPException(
-                status_code=422,
-                detail="Invalid conversation request.",
-            ) from exc
-
-        return ChatResponse(
-            session_id=payload.session_id,
-            message=result["message"],
-            intent=result["intent"],
-            trace=MCPTrace(
-                tool=result.get("tool"),
-                authenticated=result.get("tool") is not None,
-            ),
+        return await handle_budgeted_chat(
+            agent=agent_factory(),
+            payload=payload,
+            channel="alumni",
+            organization_id=str(payload.organization_id),
         )
 
     return app

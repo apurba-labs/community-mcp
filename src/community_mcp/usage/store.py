@@ -100,9 +100,7 @@ class SQLiteUsageStore:
         )
 
         connection.execute("DROP TABLE usage_records")
-        connection.execute(
-            "ALTER TABLE usage_records_new RENAME TO usage_records"
-        )
+        connection.execute("ALTER TABLE usage_records_new RENAME TO usage_records")
 
     @staticmethod
     def _expire_reservations(
@@ -365,3 +363,29 @@ class SQLiteUsageStore:
             row = connection.execute(query, parameters).fetchone()
 
         return dict(row)
+
+    def mark_unknown(self, record_id: str) -> None:
+        with self._connect() as connection:
+            cursor = connection.execute(
+                """
+                UPDATE usage_records
+                SET status = 'unknown'
+                WHERE id = ? AND status = 'reserved'
+                """,
+                (record_id,),
+            )
+
+            if cursor.rowcount != 1:
+                raise ValueError("Usage reservation not found or already finalized.")
+
+    def reservation_status(self, record_id: str) -> str:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT status FROM usage_records WHERE id = ?",
+                (record_id,),
+            ).fetchone()
+
+        if row is None:
+            raise ValueError("Usage reservation not found.")
+
+        return str(row["status"])

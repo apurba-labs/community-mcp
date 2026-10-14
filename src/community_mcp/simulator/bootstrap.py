@@ -7,6 +7,8 @@ from community_mcp.config import get_settings
 from community_mcp.simulator.agent import SimulatorAgent
 from community_mcp.simulator.api import create_simulator_app
 from community_mcp.simulator.mcp_client import CommunityMCPClient
+from community_mcp.usage.context import record_bedrock_usage
+from community_mcp.usage.store import SQLiteUsageStore, UsageBudget
 
 
 def create_app():
@@ -26,6 +28,7 @@ def create_app():
         model_id=settings.bedrock_model_id,
         region_name=settings.bedrock_region,
         profile_name=settings.aws_profile,
+        usage_recorder=record_bedrock_usage,
     )
 
     mcp_client = CommunityMCPClient(
@@ -39,7 +42,30 @@ def create_app():
         reasoner=reasoner,
     )
 
+    usage_store = SQLiteUsageStore(
+        os.environ.get(
+            "SIMULATOR_USAGE_DB_PATH",
+            "data/simulator_usage.sqlite3",
+        )
+    )
+
+    public_budget = UsageBudget(
+        daily_requests=300,
+        concurrent_requests=5,
+        daily_tokens=150_000,
+    )
+
+    alumni_budget = UsageBudget(
+        daily_requests=200,
+        concurrent_requests=3,
+        daily_tokens=100_000,
+    )
+
     return create_simulator_app(
         agent_factory=lambda: agent,
         internal_api_token=internal_api_token,
+        usage_store=usage_store,
+        public_budget=public_budget,
+        alumni_budget=alumni_budget,
+        model_id=settings.bedrock_model_id,
     )

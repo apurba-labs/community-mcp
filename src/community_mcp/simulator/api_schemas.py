@@ -21,3 +21,7 @@ class ChatResponse(BaseModel):
     message: str
     intent: str
     trace: MCPTrace
+
+
+class InternalChatRequest(ChatRequest):
+    organization_id: UUID
