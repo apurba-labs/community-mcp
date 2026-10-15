@@ -30,6 +30,7 @@ def test_requires_access_token() -> None:
             token_file=None,
         )
 
+
 @pytest.mark.asyncio
 async def test_rejects_non_public_tool() -> None:
     client = CommunityMCPClient(
@@ -63,3 +64,37 @@ async def test_transport_failure_is_safe() -> None:
             await client.list_tools()
 
     assert "Sensitive internal connection details" not in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    "server_url",
+    [
+        "http://community-demo-mcp:8000/mcp",
+        "https://mcp.example.com/mcp",
+        "http://127.0.0.1:8000/mcp",
+    ],
+)
+def test_accepts_approved_mcp_urls(server_url: str) -> None:
+    client = CommunityMCPClient(
+        server_url=server_url,
+        access_token="test-token",
+    )
+
+    assert client.server_url == server_url
+
+
+@pytest.mark.parametrize(
+    "server_url",
+    [
+        "http://example.com/mcp",
+        "http://community-demo-mcp.evil.com:8000/mcp",
+        "http://community-demo-mcp@evil.com:8000/mcp",
+        "ftp://community-demo-mcp:8000/mcp",
+    ],
+)
+def test_rejects_unapproved_mcp_urls(server_url: str) -> None:
+    with pytest.raises(ValueError):
+        CommunityMCPClient(
+            server_url=server_url,
+            access_token="test-token",
+        )

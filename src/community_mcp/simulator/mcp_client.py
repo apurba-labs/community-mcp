@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 from mcp import ClientSession
@@ -37,8 +38,21 @@ class CommunityMCPClient:
         token_file: str | Path | None = None,
         timeout_seconds: float = 15.0,
     ) -> None:
-        if not server_url.startswith(("https://", "http://127.0.0.1:", "http://localhost:")):
-            raise ValueError("MCP server must use HTTPS outside localhost.")
+        parsed = urlsplit(server_url)
+        is_https = parsed.scheme == "https" and bool(parsed.hostname)
+        is_local_http = parsed.scheme == "http" and parsed.hostname in {
+            "127.0.0.1",
+            "localhost",
+            "community-demo-mcp",
+        }
+
+        if (
+            not (is_https or is_local_http)
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.fragment
+        ):
+            raise ValueError("MCP server must use HTTPS or an approved internal HTTP endpoint.")
 
         if bool(access_token) == bool(token_file):
             raise ValueError("Exactly one of access_token or token_file is required.")
