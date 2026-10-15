@@ -45,7 +45,6 @@ class EventSchedule(BaseModel):
     description: str | None
     schedule_type: str
     starts_at: datetime | None
-    starts_at: datetime | None
     venue_id: UUID | None
     location_text: str | None
     registration_required: bool

@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import Any
 
 import boto3
@@ -5,6 +6,7 @@ from pydantic import BaseModel, ValidationError
 
 from community_mcp.agent.reasoning import AgentDecision, ReasoningProvider
 from community_mcp.agent.schemas import AgentIntent, SupportedLocale
+from community_mcp.agent.usage import BedrockUsage
 from community_mcp.schemas.assistance import AssistanceAction
 
 SYSTEM_PROMPT = """
@@ -83,6 +85,7 @@ class BedrockReasoner(ReasoningProvider):
         model_id: str = "amazon.nova-micro-v1:0",
         region_name: str = "us-east-1",
         profile_name: str | None = None,
+        usage_recorder: Callable[[BedrockUsage], None] | None = None,
     ) -> None:
         if client is not None:
             self.client = client
@@ -94,6 +97,7 @@ class BedrockReasoner(ReasoningProvider):
             self.client = session.client("bedrock-runtime")
 
         self.model_id = model_id
+        self.usage_recorder = usage_recorder
 
     async def reason(
         self,
@@ -115,6 +119,34 @@ class BedrockReasoner(ReasoningProvider):
                 "temperature": 0,
             },
         )
+
+        if self.usage_recorder is not None:
+            usage = response.get("usage")
+
+            if isinstance(usage, dict):
+                input_tokens = usage.get("inputTokens")
+                output_tokens = usage.get("outputTokens")
+                total_tokens = usage.get("totalTokens")
+
+                if (
+                    isinstance(input_tokens, int)
+                    and not isinstance(input_tokens, bool)
+                    and isinstance(output_tokens, int)
+                    and not isinstance(output_tokens, bool)
+                    and input_tokens >= 0
+                    and output_tokens >= 0
+                ):
+                    if not isinstance(total_tokens, int) or isinstance(total_tokens, bool):
+                        total_tokens = input_tokens + output_tokens
+
+                    self.usage_recorder(
+                        BedrockUsage(
+                            model_id=self.model_id,
+                            input_tokens=input_tokens,
+                            output_tokens=output_tokens,
+                            total_tokens=total_tokens,
+                        )
+                    )
 
         text = self._extract_text(response)
 
