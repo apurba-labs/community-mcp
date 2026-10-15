@@ -15,24 +15,28 @@ def test_rejects_insecure_remote_endpoint() -> None:
         CommunityMCPClient(
             server_url="http://example.com/mcp",
             access_token="test-token",
+            token_file=None,
         )
 
 
 def test_requires_access_token() -> None:
-    with pytest.raises(ValueError, match="access token"):
+    with pytest.raises(
+        ValueError,
+        match="Exactly one of access_token or token_file",
+    ):
         CommunityMCPClient(
-            server_url="https://example.com/mcp",
-            access_token="",
+            server_url="https://mcp.example.com/mcp",
+            access_token=None,
+            token_file=None,
         )
-
 
 @pytest.mark.asyncio
 async def test_rejects_non_public_tool() -> None:
     client = CommunityMCPClient(
-        server_url="https://example.com/mcp",
+        server_url="https://mcp.example.com/mcp",
         access_token="test-token",
+        token_file=None,
     )
-
     with pytest.raises(ValueError, match="not permitted"):
         await client.call_tool(
             "confirm_assistance_response",
@@ -43,8 +47,9 @@ async def test_rejects_non_public_tool() -> None:
 @pytest.mark.asyncio
 async def test_transport_failure_is_safe() -> None:
     client = CommunityMCPClient(
-        server_url="https://example.com/mcp",
+        server_url="https://mcp.example.com/mcp",
         access_token="test-token",
+        token_file=None,
     )
 
     with patch(
