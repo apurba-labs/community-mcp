@@ -15,6 +15,7 @@ WORKDIR /app
 RUN groupadd --system app && \
     useradd --system --gid app --home-dir /app app
 
+COPY --chown=app:app demo/fixtures /app/demo/fixtures
 COPY --from=builder /app/.venv /app/.venv
 
 ENV PATH="/app/.venv/bin:$PATH" \
