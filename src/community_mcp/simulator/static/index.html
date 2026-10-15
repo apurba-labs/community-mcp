@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Community MCP — Alexa+ Experience Simulator</title>
+  <link rel="stylesheet" href="/simulator/static/style.css">
+  <script src="/simulator/static/app.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">C</div>
+        <div>
+          <strong>Community MCP</strong>
+          <span>Trusted community intelligence</span>
+        </div>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="section-label">EXPERIENCE</div>
+        <h1>Community connections, powered by AI.</h1>
+        <p>
+          Explore how an AI assistant can securely discover
+          community events through the Model Context Protocol.
+        </p>
+
+        <div class="status-card">
+          <span class="status-dot"></span>
+          <div>
+            <strong>Read-only experience</strong>
+            <small>Authenticated MCP · Amazon Nova</small>
+          </div>
+        </div>
+
+        <div class="section-label">HOW IT WORKS</div>
+
+        <div class="pipeline">
+          <div><span>01</span> Your question</div>
+          <div><span>02</span> Amazon Bedrock reasoning</div>
+          <div><span>03</span> Authenticated MCP tool</div>
+          <div><span>04</span> Grounded community answer</div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        Alexa+ Experience Simulator
+        <small>Independent demonstration · Not an official Alexa integration</small>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">INTERACTIVE DEMONSTRATION</div>
+          <h2>Community Assistant</h2>
+        </div>
+
+        <div class="header-actions">
+          <select id="language" aria-label="Conversation language">
+            <option value="en">English</option>
+            <option value="bn">বাংলা</option>
+          </select>
+          <button id="newChat" class="outline-button">New chat</button>
+        </div>
+      </header>
+
+      <section id="messages" class="messages" aria-live="polite">
+        <div class="welcome">
+          <div class="welcome-icon">✦</div>
+          <h3>Ask about your community</h3>
+          <p>
+            Discover the centenary celebration through
+            authenticated community information.
+          </p>
+
+          <div class="suggestions">
+            <button data-question="When is the centenary celebration?">
+              When is the celebration?
+            </button>
+            <button data-question="Can I register for the centenary celebration?">
+              Is registration open?
+            </button>
+            <button data-question="Where is the centenary celebration?">
+              Where is the venue?
+            </button>
+            <button data-question="What is the centenary celebration program?">
+              What's the program?
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div class="composer-area">
+        <div id="notice" class="notice" role="status"></div>
+
+        <form id="chatForm" class="composer">
+          <button
+            type="button"
+            id="micButton"
+            class="icon-button"
+            aria-label="Speak your question"
+            title="Voice input"
+          >🎙</button>
+
+          <input
+            id="messageInput"
+            type="text"
+            maxlength="500"
+            autocomplete="off"
+            placeholder="Ask about the centenary celebration..."
+            aria-label="Your message"
+            required
+          >
+
+          <button id="sendButton" type="submit" class="send-button">
+            Send
+          </button>
+        </form>
+
+        <p class="disclaimer">
+          Answers use MCP event data. Unpublished information is not invented.
+          Voice availability depends on your browser.
+        </p>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

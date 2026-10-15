@@ -2,6 +2,7 @@ import pytest
 
 from community_mcp.agent.bedrock import BedrockReasoner
 from community_mcp.agent.schemas import AgentIntent, SupportedLocale
+from community_mcp.agent.usage import BedrockUsage
 from community_mcp.schemas.assistance import AssistanceAction
 
 
@@ -100,3 +101,90 @@ async def test_bedrock_reasoner_requires_action_for_response() -> None:
             message="I can donate blood.",
             locale=SupportedLocale.EN,
         )
+
+
+@pytest.mark.asyncio
+async def test_bedrock_reasoner_records_token_usage() -> None:
+    client = FakeBedrockClient('{"intent":"EVENT_CONTEXT","action":null}')
+    original_converse = client.converse
+
+    def converse_with_usage(**kwargs):
+        response = original_converse(**kwargs)
+        response["usage"] = {
+            "inputTokens": 120,
+            "outputTokens": 18,
+            "totalTokens": 138,
+        }
+        return response
+
+    client.converse = converse_with_usage
+
+    recorded: list[BedrockUsage] = []
+
+    reasoner = BedrockReasoner(
+        client=client,
+        usage_recorder=recorded.append,
+    )
+
+    decision = await reasoner.reason(
+        message="When is the centenary celebration?",
+        locale=SupportedLocale.EN,
+    )
+
+    assert decision.intent == AgentIntent.EVENT_CONTEXT
+    assert recorded == [
+        BedrockUsage(
+            model_id="amazon.nova-micro-v1:0",
+            input_tokens=120,
+            output_tokens=18,
+            total_tokens=138,
+        )
+    ]
+
+
+@pytest.mark.asyncio
+async def test_bedrock_reasoner_records_usage_before_invalid_decision() -> None:
+    class InvalidResponseClient:
+        def converse(self, **kwargs):
+            return {
+                "output": {"message": {"content": [{"text": "not valid JSON"}]}},
+                "usage": {
+                    "inputTokens": 90,
+                    "outputTokens": 12,
+                    "totalTokens": 102,
+                },
+            }
+
+    recorded: list[BedrockUsage] = []
+
+    reasoner = BedrockReasoner(
+        client=InvalidResponseClient(),
+        usage_recorder=recorded.append,
+    )
+
+    with pytest.raises(ValueError, match="invalid agent decision"):
+        await reasoner.reason(
+            message="Can I help?",
+            locale=SupportedLocale.EN,
+        )
+
+    assert len(recorded) == 1
+    assert recorded[0].total_tokens == 102
+
+
+@pytest.mark.asyncio
+async def test_bedrock_reasoner_handles_missing_usage_metadata() -> None:
+    recorded: list[BedrockUsage] = []
+
+    reasoner = BedrockReasoner(
+        client=FakeBedrockClient('{"intent":"EVENT_CONTEXT","action":null}'),
+        usage_recorder=recorded.append,
+    )
+
+    decision = await reasoner.reason(
+        message="When is the event?",
+        locale=SupportedLocale.EN,
+    )
+
+    assert decision.intent == AgentIntent.EVENT_CONTEXT
+    assert recorded == []

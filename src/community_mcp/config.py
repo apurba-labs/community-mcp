@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     gotihub_base_url: OptionalHttpUrl = None
     gotihub_organization_slug: str | None = None
     gotihub_service_token: str | None = None
+    gotihub_organization_id: str | None = None
+
+    # Simulator
+    simulator_mcp_url: str | None = None
+    simulator_mcp_access_token: str | None = None
+    simulator_internal_api_token: str | None = None
+    simulator_usage_db_path: str = "data/simulator_usage.sqlite3"
 
     reasoning_provider: Literal["deterministic", "bedrock"] = "deterministic"
 
@@ -38,10 +45,14 @@ class Settings(BaseSettings):
     bedrock_region: str = "us-east-1"
     bedrock_model_id: str = "amazon.nova-micro-v1:0"
 
-    mcp_capability_mode: Literal["public", "demo"] = "public"
-
     demo_ledger_enabled: bool = False
     demo_ledger_path: str = ".local/demo-assistance.sqlite3"
+
+    # MCP server
+    mcp_host: str = "127.0.0.1"
+    mcp_port: int = 8000
+
+    mcp_capability_mode: Literal["public", "demo"] = "public"
 
     mcp_auth_enabled: bool = False
     mcp_auth_issuer_url: OptionalHttpUrl = None
