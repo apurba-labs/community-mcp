@@ -17,7 +17,9 @@ class DemoAssistanceProvider(AssistanceContextProvider):
 
     def __init__(self, fixture_path: Path | None = None) -> None:
         self.fixture_path = fixture_path or (
-            Path(__file__).parents[3] / "demo" / "fixtures" / "assistance.json"
+            Path("/app/demo/fixtures/events.json")
+            if Path("/app/demo/fixtures/events.json").is_file()
+            else Path(__file__).resolve().parents[3] / "demo" / "fixtures" / "assistance.json"
         )
 
     async def get_public_context(
