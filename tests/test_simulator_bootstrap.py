@@ -2,13 +2,22 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from community_mcp.config import get_settings
 from community_mcp.simulator.bootstrap import create_app
 
 ORGANIZATION_ID = "11111111-1111-4111-8111-111111111111"
 
+
+@pytest.fixture(autouse=True)
+def clear_settings_cache():
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
 def test_bootstrap_requires_mcp_configuration(monkeypatch):
-    monkeypatch.delenv("SIMULATOR_MCP_URL", raising=False)
-    monkeypatch.delenv("SIMULATOR_MCP_ACCESS_TOKEN", raising=False)
+    monkeypatch.setenv("SIMULATOR_MCP_URL", "")
+    monkeypatch.setenv("SIMULATOR_MCP_ACCESS_TOKEN", "")
 
     with pytest.raises(RuntimeError, match="SIMULATOR_MCP_URL"):
         create_app()

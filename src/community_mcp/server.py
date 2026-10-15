@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
@@ -253,10 +252,12 @@ mcp = create_mcp_server()
 
 
 if __name__ == "__main__":
+    settings = get_settings()
+
     mcp.run(
         transport="streamable-http",
-        host=os.getenv("MCP_HOST", "127.0.0.1"),
-        port=int(os.getenv("MCP_PORT", "8000")),
+        host=settings.mcp_host,
+        port=settings.mcp_port,
         json_response=True,
         transport_security=TransportSecuritySettings(
             enable_dns_rebinding_protection=True,

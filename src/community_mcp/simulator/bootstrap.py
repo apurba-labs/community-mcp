@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from community_mcp.agent.bedrock import BedrockReasoner
 from community_mcp.config import get_settings
 from community_mcp.simulator.agent import SimulatorAgent
@@ -14,14 +12,10 @@ from community_mcp.usage.store import SQLiteUsageStore, UsageBudget
 def create_app():
     settings = get_settings()
 
-    mcp_url = os.environ.get("SIMULATOR_MCP_URL")
-    mcp_token = os.environ.get("SIMULATOR_MCP_ACCESS_TOKEN")
-    internal_api_token = os.environ.get("SIMULATOR_INTERNAL_API_TOKEN")
-
-    if not mcp_url:
+    if not settings.simulator_mcp_url:
         raise RuntimeError("SIMULATOR_MCP_URL is required.")
 
-    if not mcp_token:
+    if not settings.simulator_mcp_access_token:
         raise RuntimeError("SIMULATOR_MCP_ACCESS_TOKEN is required.")
 
     reasoner = BedrockReasoner(
@@ -32,22 +26,17 @@ def create_app():
     )
 
     mcp_client = CommunityMCPClient(
-        server_url=mcp_url,
-        access_token=mcp_token,
+        server_url=settings.simulator_mcp_url,
+        access_token=settings.simulator_mcp_access_token,
     )
 
-    # One shared agent preserves temporary conversation context.
+    # Shared agent preserves temporary conversation context.
     agent = SimulatorAgent(
         mcp_client=mcp_client,
         reasoner=reasoner,
     )
 
-    usage_store = SQLiteUsageStore(
-        os.environ.get(
-            "SIMULATOR_USAGE_DB_PATH",
-            "data/simulator_usage.sqlite3",
-        )
-    )
+    usage_store = SQLiteUsageStore(settings.simulator_usage_db_path)
 
     public_budget = UsageBudget(
         daily_requests=300,
@@ -63,7 +52,7 @@ def create_app():
 
     return create_simulator_app(
         agent_factory=lambda: agent,
-        internal_api_token=internal_api_token,
+        internal_api_token=settings.simulator_internal_api_token,
         usage_store=usage_store,
         public_budget=public_budget,
         alumni_budget=alumni_budget,

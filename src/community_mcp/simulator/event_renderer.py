@@ -70,9 +70,12 @@ def render_event_answer(
 
         if not starts_at:
             return (
-                "অনুষ্ঠানের তারিখ এখনো প্রকাশ করা হয়নি।"
+                "শতবর্ষ উদযাপনের তারিখ এখনো আনুষ্ঠানিকভাবে ঘোষণা করা হয়নি। "
+                "তারিখ ঘোষণা করা হলে বিদ্যালয়ের ওয়েবসাইটের সংবাদ বিভাগে "
+                "প্রকাশ করা হবে। বিস্তারিত: /news"
                 if bn
-                else "The event date has not been announced yet."
+                else "The centenary celebration date has not been officially announced yet. "
+                "Please check the school's news section for official updates: /news"
             )
 
         try:

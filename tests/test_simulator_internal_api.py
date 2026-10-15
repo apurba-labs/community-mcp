@@ -8,6 +8,7 @@ from community_mcp.usage.store import SQLiteUsageStore, UsageBudget
 
 ORGANIZATION_ID = "11111111-1111-4111-8111-111111111111"
 
+
 @pytest.fixture
 def agent():
     mock = MagicMock()
@@ -19,6 +20,7 @@ def agent():
         }
     )
     return mock
+
 
 @pytest.fixture
 def usage_controls(tmp_path):
@@ -36,12 +38,11 @@ def usage_controls(tmp_path):
         "alumni_budget": budget,
     }
 
+
 @pytest.mark.asyncio
 async def test_internal_chat_requires_token(agent, usage_controls):
     app = create_simulator_app(
-        agent_factory=lambda: agent,
-        internal_api_token="test-secret",
-        **usage_controls
+        agent_factory=lambda: agent, internal_api_token="test-secret", **usage_controls
     )
 
     async with httpx.AsyncClient(
@@ -53,7 +54,7 @@ async def test_internal_chat_requires_token(agent, usage_controls):
             json={
                 "message": "When is the event?",
                 "organization_id": ORGANIZATION_ID,
-            }
+            },
         )
         invalid = await client.post(
             "/simulator/api/internal/chat",
@@ -61,7 +62,7 @@ async def test_internal_chat_requires_token(agent, usage_controls):
             json={
                 "message": "When is the event?",
                 "organization_id": ORGANIZATION_ID,
-            }
+            },
         )
 
     assert missing.status_code == 401
@@ -72,9 +73,7 @@ async def test_internal_chat_requires_token(agent, usage_controls):
 @pytest.mark.asyncio
 async def test_internal_chat_accepts_valid_token(agent, usage_controls):
     app = create_simulator_app(
-        agent_factory=lambda: agent,
-        internal_api_token="test-secret",
-        **usage_controls
+        agent_factory=lambda: agent, internal_api_token="test-secret", **usage_controls
     )
 
     async with httpx.AsyncClient(
@@ -122,7 +121,7 @@ async def test_internal_rate_limit_does_not_block_public_simulator(agent, usage_
         agent_factory=lambda: agent,
         internal_api_token="test-secret",
         internal_rate_limiter=ChatRateLimiter(max_requests=1),
-        **usage_controls
+        **usage_controls,
     )
 
     async with httpx.AsyncClient(
@@ -155,3 +154,87 @@ async def test_internal_rate_limit_does_not_block_public_simulator(agent, usage_
     assert second.status_code == 429
     assert public.status_code == 200
     assert agent.handle.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_internal_chat_rejects_other_organization(agent, usage_controls):
+    app = create_simulator_app(
+        agent_factory=lambda: agent,
+        internal_api_token="test-secret",
+        internal_organization_id=ORGANIZATION_ID,
+        **usage_controls,
+    )
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        response = await client.post(
+            "/simulator/api/internal/chat",
+            headers={"Authorization": "Bearer test-secret"},
+            json={
+                "message": "When is the event?",
+                "organization_id": "22222222-2222-4222-8222-222222222222",
+            },
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == ("Organization is not authorized for this assistant.")
+    agent.handle.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_internal_chat_accepts_matching_organization(agent, usage_controls):
+    app = create_simulator_app(
+        agent_factory=lambda: agent,
+        internal_api_token="test-secret",
+        internal_organization_id=ORGANIZATION_ID,
+        **usage_controls,
+    )
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        response = await client.post(
+            "/simulator/api/internal/chat",
+            headers={"Authorization": "Bearer test-secret"},
+            json={
+                "message": "When is the event?",
+                "organization_id": ORGANIZATION_ID,
+            },
+        )
+
+    assert response.status_code == 200
+    agent.handle.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_internal_chat_uses_alumni_agent(agent, usage_controls):
+    public_agent = MagicMock()
+    public_agent.handle = AsyncMock()
+
+    app = create_simulator_app(
+        agent_factory=lambda: public_agent,
+        internal_agent_factory=lambda: agent,
+        internal_api_token="test-secret",
+        internal_organization_id=ORGANIZATION_ID,
+        **usage_controls,
+    )
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        response = await client.post(
+            "/simulator/api/internal/chat",
+            headers={"Authorization": "Bearer test-secret"},
+            json={
+                "message": "When is the event?",
+                "organization_id": ORGANIZATION_ID,
+            },
+        )
+
+    assert response.status_code == 200
+    agent.handle.assert_awaited_once()
+    public_agent.handle.assert_not_awaited()

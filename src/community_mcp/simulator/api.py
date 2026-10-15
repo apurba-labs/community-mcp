@@ -63,8 +63,10 @@ class ChatRateLimiter:
 def create_simulator_app(
     *,
     agent_factory: Callable[[], Any],
-    rate_limiter: ChatRateLimiter | None = None,
+    internal_agent_factory: Callable[[], Any] | None = None,
+    internal_organization_id: str | None = None,
     internal_api_token: str | None = None,
+    rate_limiter: ChatRateLimiter | None = None,
     internal_rate_limiter: ChatRateLimiter | None = None,
     usage_store: SQLiteUsageStore | None = None,
     public_budget: UsageBudget | None = None,
@@ -217,6 +219,15 @@ def create_simulator_app(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+        if (
+            internal_organization_id is not None
+            and str(payload.organization_id) != internal_organization_id
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="Organization is not authorized for this assistant.",
+            )
+
         # This endpoint is reserved for the authenticated Alumni backend.
         # The organization UUID must come from its resolved organization
         # context, never from an end-user-controlled channel selector.
@@ -230,7 +241,7 @@ def create_simulator_app(
             )
 
         return await handle_budgeted_chat(
-            agent=agent_factory(),
+            agent=(internal_agent_factory or agent_factory)(),
             payload=payload,
             channel="alumni",
             organization_id=str(payload.organization_id),
