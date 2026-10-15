@@ -221,3 +221,5 @@ __marimo__/
 
 # Simulator runtime data
 data/
+infra/public-simulator/demo-mcp.env
+infra/public-simulator/public-simulator.env

@@ -1,0 +1,60 @@
+services:
+  demo-mcp:
+    image: community-mcp:public-demo
+    container_name: community-demo-mcp
+    restart: unless-stopped
+
+    command:
+      - python
+      - -m
+      - community_mcp.server
+
+    env_file:
+      - ./demo-mcp.env
+
+    networks:
+      - demo_internal
+
+    security_opt:
+      - no-new-privileges:true
+
+  public-simulator:
+    image: community-mcp:public-demo
+    container_name: community-public-simulator
+    restart: unless-stopped
+
+    command:
+      - uvicorn
+      - community_mcp.simulator.bootstrap:create_app
+      - --factory
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8090"
+
+    env_file:
+      - ./public-simulator.env
+
+    ports:
+      - "127.0.0.1:8090:8090"
+
+    volumes:
+      - /etc/community-mcp/public-simulator/tokens:/run/mcp-tokens:ro
+      - /home/ubuntu/.config/community-mcp-bedrock/credentials:/run/secrets/aws-credentials:ro
+      - public_simulator_data:/app/data
+
+    depends_on:
+      - demo-mcp
+
+    networks:
+      - demo_internal
+
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  demo_internal:
+    driver: bridge
+
+volumes:
+  public_simulator_data:
