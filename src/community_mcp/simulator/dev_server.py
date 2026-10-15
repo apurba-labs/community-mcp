@@ -116,6 +116,7 @@ async def local_mcp_server():
 
 async def main():
     from community_mcp.config import Settings
+
     async with local_mcp_server() as mcp_url:
         settings = Settings()
         model_id = "amazon.nova-micro-v1:0"
