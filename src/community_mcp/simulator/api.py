@@ -247,4 +247,63 @@ def create_simulator_app(
             organization_id=str(payload.organization_id),
         )
 
+    @app.get("/simulator/api/internal/usage")
+    async def internal_usage(
+        authorization: Annotated[str | None, Header()] = None,
+    ):
+        if not internal_api_token or not internal_organization_id:
+            raise HTTPException(
+                status_code=503,
+                detail="Internal usage reporting is not configured.",
+            )
+
+        scheme, _, supplied_token = (authorization or "").partition(" ")
+
+        if scheme.lower() != "bearer" or not secrets.compare_digest(
+            supplied_token,
+            internal_api_token,
+        ):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid service credentials.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        if usage_store is None or alumni_budget is None:
+            raise HTTPException(
+                status_code=503,
+                detail="AI usage controls are not configured.",
+            )
+
+        usage = usage_store.daily_summary(
+            channel="alumni",
+            organization_id=internal_organization_id,
+        )
+
+        return {
+            "organization_id": internal_organization_id,
+            "period": "today_utc",
+            "requests": {
+                "used": usage["requests_used"],
+                "limit": alumni_budget.daily_requests,
+                "remaining": max(
+                    0,
+                    alumni_budget.daily_requests - usage["requests_used"],
+                ),
+                "active": usage["active_requests"],
+                "concurrent_limit": alumni_budget.concurrent_requests,
+            },
+            "tokens": {
+                "recorded": usage["recorded_tokens"],
+                "allocated": usage["allocated_tokens"],
+                "limit": alumni_budget.daily_tokens,
+                "remaining": max(
+                    0,
+                    alumni_budget.daily_tokens - usage["allocated_tokens"],
+                ),
+                "input": usage["input_tokens"],
+                "output": usage["output_tokens"],
+            },
+        }
+
     return app

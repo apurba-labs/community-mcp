@@ -376,3 +376,71 @@ class SQLiteUsageStore:
             raise ValueError("Usage reservation not found.")
 
         return str(row["status"])
+
+    def daily_summary(
+        self,
+        *,
+        channel: str,
+        organization_id: str | None = None,
+    ) -> dict[str, int]:
+        if channel not in {"public", "alumni"}:
+            raise ValueError("Invalid usage channel.")
+
+        if channel == "alumni" and not organization_id:
+            raise ValueError("Alumni summary requires an organization ID.")
+
+        if channel == "public" and organization_id is not None:
+            raise ValueError("Public summary cannot have an organization ID.")
+
+        now = datetime.now(UTC)
+        day_start = now.replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+        day_end = day_start + timedelta(days=1)
+
+        scope_sql = "channel = ?"
+        parameters: list[str] = [channel]
+
+        if channel == "alumni":
+            scope_sql += " AND organization_id = ?"
+            parameters.append(organization_id)
+
+        query = f"""
+            SELECT
+                COUNT(*) AS requests_used,
+                COALESCE(SUM(
+                    CASE WHEN status = 'reserved' THEN 1 ELSE 0 END
+                ), 0) AS active_requests,
+                COALESCE(SUM(input_tokens), 0) AS input_tokens,
+                COALESCE(SUM(output_tokens), 0) AS output_tokens,
+                COALESCE(SUM(total_tokens), 0) AS recorded_tokens,
+                COALESCE(SUM(
+                    CASE
+                        WHEN status IN ('reserved', 'unknown')
+                        THEN reserved_tokens
+                        ELSE total_tokens
+                    END
+                ), 0) AS allocated_tokens
+            FROM usage_records
+            WHERE {scope_sql}
+            AND created_at >= ?
+            AND created_at < ?
+        """
+
+        parameters.extend(
+            [
+                day_start.isoformat(),
+                day_end.isoformat(),
+            ]
+        )
+
+        with self._connect() as connection:
+            row = connection.execute(
+                query,
+                parameters,
+            ).fetchone()
+
+        return dict(row)

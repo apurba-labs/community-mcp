@@ -47,8 +47,7 @@ async def test_followup_uses_event_context_and_fresh_mcp_data():
     )
 
     assert (
-        "The centenary celebration date has not been officially announced yet."
-        in first["message"]
+        "The centenary celebration date has not been officially announced yet." in first["message"]
     )
     assert "not currently enabled" in second["message"]
     assert mcp_client.call_tool.await_count == 2
