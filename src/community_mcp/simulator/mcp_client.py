@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -32,18 +33,35 @@ class CommunityMCPClient:
         self,
         *,
         server_url: str,
-        access_token: str,
+        access_token: str | None = None,
+        token_file: str | Path | None = None,
         timeout_seconds: float = 15.0,
     ) -> None:
         if not server_url.startswith(("https://", "http://127.0.0.1:", "http://localhost:")):
             raise ValueError("MCP server must use HTTPS outside localhost.")
 
-        if not access_token:
-            raise ValueError("MCP access token is required.")
+        if bool(access_token) == bool(token_file):
+            raise ValueError("Exactly one of access_token or token_file is required.")
 
         self.server_url = server_url
         self.access_token = access_token
+        self.token_file = Path(token_file) if token_file else None
         self.timeout_seconds = timeout_seconds
+
+    def _get_access_token(self) -> str:
+        if self.token_file is None:
+            assert self.access_token is not None
+            return self.access_token
+
+        try:
+            token = self.token_file.read_text(encoding="utf-8").strip()
+        except OSError as exc:
+            raise CommunityMCPClientError("MCP authentication is temporarily unavailable.") from exc
+
+        if not token:
+            raise CommunityMCPClientError("MCP authentication is temporarily unavailable.")
+
+        return token
 
     async def _execute(
         self,
@@ -53,7 +71,7 @@ class CommunityMCPClient:
     ) -> list[MCPToolInfo] | Any:
         try:
             async with httpx.AsyncClient(
-                headers={"Authorization": f"Bearer {self.access_token}"},
+                headers={"Authorization": f"Bearer {self._get_access_token()}"},
                 timeout=self.timeout_seconds,
                 follow_redirects=False,
             ) as http_client:

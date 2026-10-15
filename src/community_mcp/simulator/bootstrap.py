@@ -15,8 +15,10 @@ def create_app():
     if not settings.simulator_mcp_url:
         raise RuntimeError("SIMULATOR_MCP_URL is required.")
 
-    if not settings.simulator_mcp_access_token:
-        raise RuntimeError("SIMULATOR_MCP_ACCESS_TOKEN is required.")
+    if bool(settings.simulator_mcp_access_token) == bool(settings.simulator_mcp_token_file):
+        raise RuntimeError(
+            "Exactly one of SIMULATOR_MCP_ACCESS_TOKEN or SIMULATOR_MCP_TOKEN_FILE is required."
+        )
 
     reasoner = BedrockReasoner(
         model_id=settings.bedrock_model_id,
@@ -28,6 +30,7 @@ def create_app():
     mcp_client = CommunityMCPClient(
         server_url=settings.simulator_mcp_url,
         access_token=settings.simulator_mcp_access_token,
+        token_file=settings.simulator_mcp_token_file,
     )
 
     # Shared agent preserves temporary conversation context.
