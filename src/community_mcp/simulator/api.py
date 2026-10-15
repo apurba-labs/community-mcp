@@ -72,16 +72,23 @@ def create_simulator_app(
     public_budget: UsageBudget | None = None,
     alumni_budget: UsageBudget | None = None,
     model_id: str = "amazon.nova-micro-v1:0",
+    internal_only: bool = False,
 ) -> FastAPI:
-    app = FastAPI(title="Community MCP Experience Simulator")
+    app = FastAPI(
+        title="Community MCP Experience Simulator",
+        docs_url=None if internal_only else "/docs",
+        redoc_url=None if internal_only else "/redoc",
+        openapi_url=None if internal_only else "/openapi.json",
+    )
 
     static_dir = Path(__file__).resolve().parent / "static"
 
-    app.mount(
-        "/simulator/static",
-        StaticFiles(directory=static_dir),
-        name="simulator-static",
-    )
+    if not internal_only:
+        app.mount(
+            "/simulator/static",
+            StaticFiles(directory=static_dir),
+            name="simulator-static",
+        )
 
     limiter = rate_limiter or ChatRateLimiter()
 
@@ -167,15 +174,12 @@ def create_simulator_app(
             finally:
                 reset_usage(context_token)
 
-    @app.get("/simulator", include_in_schema=False)
     async def simulator_home():
         return FileResponse(static_dir / "index.html")
 
-    @app.get("/simulator/api/health")
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    @app.post("/simulator/api/chat", response_model=ChatResponse)
     async def chat(
         payload: ChatRequest,
         request: Request,
@@ -193,6 +197,26 @@ def create_simulator_app(
             agent=agent_factory(),
             payload=payload,
             channel="public",
+        )
+
+    # Register public simulator routes only when enabled.
+    if not internal_only:
+        app.add_api_route(
+            "/simulator",
+            simulator_home,
+            methods=["GET"],
+            include_in_schema=False,
+        )
+        app.add_api_route(
+            "/simulator/api/health",
+            health,
+            methods=["GET"],
+        )
+        app.add_api_route(
+            "/simulator/api/chat",
+            chat,
+            methods=["POST"],
+            response_model=ChatResponse,
         )
 
     @app.post("/simulator/api/internal/chat", response_model=ChatResponse)
