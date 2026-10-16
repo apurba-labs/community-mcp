@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     # Simulator
     simulator_mcp_url: str | None = None
     simulator_mcp_access_token: str | None = None
+    simulator_mcp_token_file: str | None = None
     simulator_internal_api_token: str | None = None
     simulator_usage_db_path: str = "data/simulator_usage.sqlite3"
 
