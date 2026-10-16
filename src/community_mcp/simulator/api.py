@@ -174,6 +174,9 @@ def create_simulator_app(
             finally:
                 reset_usage(context_token)
 
+    async def landing_home():
+        return FileResponse(static_dir / "landing" / "index.html")
+
     async def simulator_home():
         return FileResponse(static_dir / "index.html")
 
@@ -201,6 +204,12 @@ def create_simulator_app(
 
     # Register public simulator routes only when enabled.
     if not internal_only:
+        app.add_api_route(
+            "/",
+            landing_home,
+            methods=["GET"],
+            include_in_schema=False,
+        )
         app.add_api_route(
             "/simulator",
             simulator_home,
