@@ -18,7 +18,7 @@ GotiHub Alumni is an independently developed production platform with a separate
 
 **Alexa+ status:** The browser simulator demonstrates the intended conversational MCP experience. An end-to-end Alexa+ integration has not been independently verified.
 
-## The Problem
+## The Challenge: Connecting Communities to Action
 
 Schools, alumni associations, clubs, and other trusted communities already have people, events, committees, schedules, and support networks.
 
