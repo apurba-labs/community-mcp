@@ -52,6 +52,7 @@ def test_bootstrap_creates_fastapi_app(monkeypatch):
     client_class.assert_called_once_with(
         server_url="https://mcp.example.com/mcp",
         access_token="test-token",
+        token_file=None,
     )
 
 

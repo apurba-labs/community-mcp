@@ -16,7 +16,9 @@ _event_detail_list_adapter = TypeAdapter(list[EventDetail])
 class DemoProvider(CommunityDataProvider):
     def __init__(self, fixture_path: Path | None = None) -> None:
         self._fixture_path = fixture_path or (
-            Path(__file__).resolve().parents[3] / "demo" / "fixtures" / "events.json"
+            Path("/app/demo/fixtures/events.json")
+            if Path("/app/demo/fixtures/events.json").is_file()
+            else Path(__file__).resolve().parents[3] / "demo" / "fixtures" / "events.json"
         )
 
     def _load_events(self) -> list[EventDetail]:
