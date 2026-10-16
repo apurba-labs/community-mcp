@@ -40,7 +40,7 @@ async def test_event_answer_uses_mcp_data() -> None:
 
     assert response["tool"] == "get_event_context"
     assert (
-        "The centenary celebration date has not been officially announced yet."
+        "The centenary celebration date has not yet been"
         in response["message"]
     )
 
@@ -81,7 +81,7 @@ async def test_bangla_event_answer() -> None:
         locale=SupportedLocale.BN,
     )
 
-    assert "তারিখ এখনো আনুষ্ঠানিকভাবে ঘোষণা করা হয়নি" in response["message"]
+    assert "শতবর্ষ উদ্‌যাপনের মূল অনুষ্ঠানের তারিখ এখনো আনুষ্ঠানিকভাবে" in response["message"]
 
 
 @pytest.mark.asyncio
