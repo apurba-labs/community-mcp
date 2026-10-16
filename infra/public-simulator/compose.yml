@@ -40,7 +40,7 @@ services:
 
     volumes:
       - /etc/community-mcp/public-simulator/tokens:/run/mcp-tokens:ro
-      - /home/ubuntu/.config/community-mcp-bedrock/credentials:/run/secrets/aws-credentials:ro
+      - /etc/community-mcp/public-simulator/aws/credentials:/run/secrets/aws-credentials:ro
       - public_simulator_data:/app/data
 
     depends_on:

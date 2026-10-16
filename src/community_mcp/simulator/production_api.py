@@ -6,6 +6,7 @@ from uuid import UUID
 
 from community_mcp.config import get_settings
 from community_mcp.providers.gotihub import GotiHubProvider
+from community_mcp.providers.gotihub_assistance import GotiHubAssistanceProvider
 from community_mcp.simulator.alumni_agent import AlumniAgent
 from community_mcp.simulator.api import create_simulator_app
 from community_mcp.usage.store import SQLiteUsageStore, UsageBudget
@@ -40,7 +41,16 @@ def create_app():
         service_token=settings.gotihub_service_token,
     )
 
-    agent = AlumniAgent(provider=provider)
+    assistance_provider = GotiHubAssistanceProvider(
+        base_url=str(settings.gotihub_base_url),
+        organization_slug=settings.gotihub_organization_slug,
+        service_token=settings.gotihub_service_token,
+    )
+
+    agent = AlumniAgent(
+        provider=provider,
+        assistance_provider=assistance_provider,
+    )
 
     usage_store = SQLiteUsageStore(settings.simulator_usage_db_path)
 
