@@ -247,8 +247,9 @@ The CLI demo uses synthetic data and deterministic reasoning.
 AWS credentials are not required.
 
 ## Documentation
-
-- [Documentation index](docs/README.md)
+For architecture, security, integration details, deployment,
+and hackathon engineering notes, see the
+- [Community MCP Documentation](docs/README.md)
 - [Architecture](docs/architecture/overview.md)
 - [Security](docs/architecture/security.md)
 - [Data providers](docs/architecture/data-providers.md)

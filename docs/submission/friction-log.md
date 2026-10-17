@@ -1,10 +1,10 @@
 # Community MCP — Engineering Friction Log
 
-**Project:** Community MCP — Trusted AI for Real Communities  
-**Hackathon:** Amazon Build, Ship, Shape Developer Hackathon 2026  
-**Primary Track:** Alexa+ (Simulated Experience)  
-**Mini Challenges:** AWS Builder, Open Source  
-**Repository:** https://github.com/apurba-labs/community-mcp  
+**Project:** Community MCP — Trusted AI for Real Communities
+**Hackathon:** Amazon Build, Ship, Shape Developer Hackathon 2026
+**Primary Track:** Alexa+ (Simulated Experience)
+**Mini Challenges:** AWS Builder, Open Source
+**Repository:** https://github.com/apurba-labs/community-mcp
 **Public Demo:** https://mcp.gotihub.com/simulator
 
 ## Overview
@@ -23,8 +23,8 @@ The observations below describe our integration experience. They should not be i
 
 ## 1. MCP Authentication and JWT Audience Validation
 
-**Severity:** High  
-**Category:** Authentication / MCP Integration  
+**Severity:** High
+**Category:** Authentication / MCP Integration
 **Date:** October 12, 2026
 
 ### Task Attempted
@@ -81,8 +81,8 @@ Such guidance would help developers implement secure MCP integrations with fewer
 
 ## 2. Renewable Authentication for Long-Running MCP Sessions
 
-**Severity:** Medium  
-**Category:** Authentication / Production Reliability  
+**Severity:** Medium
+**Category:** Authentication / Production Reliability
 **Date:** October 16, 2026
 
 ### Task Attempted
@@ -139,8 +139,8 @@ This would be especially valuable for developers building hosted AI assistants r
 
 ## 3. Synthetic Demo Data Packaging in Docker
 
-**Severity:** Medium  
-**Category:** Deployment / Reproducibility  
+**Severity:** Medium
+**Category:** Deployment / Reproducibility
 **Date:** October 16, 2026
 
 ### Task Attempted
@@ -195,8 +195,8 @@ This would improve reproducibility for projects submitted to hackathons and depl
 
 ## 4. Amazon Bedrock Usage Accounting and Budget Management
 
-**Severity:** Medium  
-**Category:** AI Operations / Cost Management  
+**Severity:** Medium
+**Category:** AI Operations / Cost Management
 **Date:** October 14, 2026
 
 ### Task Attempted
@@ -287,6 +287,6 @@ These challenges shaped the project's architecture and helped turn an initial de
 
 ---
 
-**Project Repository:** https://github.com/apurba-labs/community-mcp  
-**Live Simulator:** https://mcp.gotihub.com/simulator  
+**Project Repository:** https://github.com/apurba-labs/community-mcp
+**Live Simulator:** https://mcp.gotihub.com/simulator
 **Project Website:** https://mcp.gotihub.com/
